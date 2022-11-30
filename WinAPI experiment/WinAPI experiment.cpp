@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 #include <memory> 
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
@@ -294,17 +295,33 @@ void captureScreen(const char path[])
     free(lpbitmap);
 }
 
-Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData) {
+Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const size_t dataSize) {
     Pix* bmpPix = pixCreate(info.biWidth, info.biHeight, info.biBitCount);
 
     if ((bmpPix = pixCreateHeader(info.biWidth, info.biHeight, info.biBitCount)) == NULL)
         return nullptr;
+    /*
+    * NOTE: This only aligns the bitmap pixel data to the Leptonica Pix storage standard.
+    * It does not fix the colors and is only meant for text recognition.
+    */
+    //Flip vertically
+    for (size_t iTop = 0, iBottom = info.biHeight - 1; iTop < info.biHeight / 2; iTop++, iBottom--)
+        for (size_t j = 0; j < info.biWidth; j++)
+            std::swap(
+                pxlData[iTop * info.biWidth + j],
+                pxlData[iBottom * info.biWidth + j]
+            );
     pixSetInputFormat(bmpPix, IFF_BMP);
-	//l_int32 wpl = pixGetWpl(bmpPix);
-
 	pixSetData(bmpPix, pxlData);
 	pixSetPadBits(bmpPix, 0);
-    pixEndianByteSwap(bmpPix);
+
+	bool readerror = 0;
+    l_int32 fileBpl = dataSize / info.biHeight;
+    l_int32 pixWpl = pixGetWpl(bmpPix);
+	l_int32 extrabytes = fileBpl - 3 * info.biWidth;
+	l_uint32* line = pixGetData(bmpPix) + pixWpl * (info.biHeight - 1);
+
+	pixEndianByteSwap(bmpPix);
 
 	return bmpPix;
 }
@@ -317,21 +334,17 @@ int main()
     BITMAPINFOHEADER bmih;
     SIZE_T dwBmpSize;
     void* data;
-    captureScreen("C:\\test.bmp");
     getBmpData(NULL, bmih, data, dwBmpSize);
-    PIX* screenPix = bmpToPix(bmih, (l_uint32*)data);
-    PIX* driveImg = pixRead("C:\\test.bmp");
+    PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
+    
 
-    if (api->Init(NULL, "eng")) {
+    if (api->Init("tessdata", "eng")) {
         std::cerr << "Could not initialize tesseract.\n";
         exit(1);
     }
     api->SetImage(screenPix);
     outText = api->GetUTF8Text();
     std::cout << "Ocr output: " << outText <<  std::endl;
-    api->SetImage(driveImg);
-    outText = api->GetUTF8Text();
-    std::cout << "Ocr output: " << outText << std::endl;
 
     //const char type[] = "HI this is a test im testing out this new shit";
     /*EnumWindows(enumWindowCallback, NULL);
@@ -392,7 +405,8 @@ int main()
     //Cleanup
     api->End();
     delete api;
-    delete[] outText;
+    //delete[] outText;
+    
     pixDestroy(&screenPix);
     return 0;
 }
