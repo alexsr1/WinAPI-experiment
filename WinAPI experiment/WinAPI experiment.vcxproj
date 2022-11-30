@@ -147,6 +147,13 @@
   <ItemGroup>
     <ClCompile Include="WinAPI experiment.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ArtifactAttributeEnums.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WinAPI experiment.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

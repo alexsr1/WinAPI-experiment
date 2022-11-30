@@ -266,10 +266,6 @@ void captureScreen(const char path[])
 
     getBmpData(NULL, bi, lpbitmap, dwBmpSize);
     
-    // Starting with 32-bit Windows, GlobalAlloc and LocalAlloc are implemented as wrapper functions that 
-    // call HeapAlloc using a handle to the process's default heap. Therefore, GlobalAlloc and LocalAlloc 
-    // have greater overhead than HeapAlloc.
-
     // Offset to where the actual bitmap bits start.
     bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER);
 
@@ -328,49 +324,55 @@ Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const size_t data
 
 int main()
 {
-    tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();
-    char* outText;
-
-    BITMAPINFOHEADER bmih;
-    SIZE_T dwBmpSize;
-    void* data;
-    getBmpData(NULL, bmih, data, dwBmpSize);
-    PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
-    
-
-    if (api->Init("tessdata", "eng")) {
-        std::cerr << "Could not initialize tesseract.\n";
-        exit(1);
-    }
-    api->SetImage(screenPix);
-    outText = api->GetUTF8Text();
-    std::cout << "Ocr output: " << outText <<  std::endl;
-
-    //const char type[] = "HI this is a test im testing out this new shit";
-    /*EnumWindows(enumWindowCallback, NULL);
+    EnumWindows(enumWindowCallback, NULL);
 
     if (!genshinWnd) {
-        std::cout << "Window not found" << std::endl;
+        std::cout << "Genshin not found" << std::endl;
         return EXIT_FAILURE;
     }
 
     SetForegroundWindow(genshinWnd);
     Sleep(10);
-    for(size_t i = 0; i < 49; i++)
+    for (size_t i = 0; i < 49; i++)
         mouseWheel(-1);
 
     if (!SetForegroundWindow(genshinWnd)) {
         printErr(GetLastError(), "SetForegroundWindow");
         return EXIT_FAILURE;
     }
-        
+
     RECT rect;
-    if (!GetWindowRect(genshinWnd, &rect)) {
+    /*if (!GetWindowRect(genshinWnd, &rect)) {
         printErr(GetLastError(), "GetWindowRect");
         return EXIT_FAILURE;
     }
     std::cout << "Rect: \nx: " << rect.left << " y: " << rect.top << "\n";
     std::cout << "x: " << rect.right << " y: " << rect.bottom << "\n";*/
+
+    tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();
+    char* outText;
+
+    BITMAPINFOHEADER bmih;
+    SIZE_T dwBmpSize;
+    void* data;
+    
+    getBmpData(genshinWnd, bmih, data, dwBmpSize);
+    PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
+    
+
+    if (api->Init("tessdata", "eng")) {
+        std::cerr << "Could not initialize tesseract.\n";
+        return EXIT_FAILURE;
+    }
+
+    pixWrite("out.bmp", screenPix, IFF_BMP);
+    api->SetImage(screenPix);
+    api->SetRectangle(1111, 252, 222, 33);
+    outText = api->GetUTF8Text();
+    std::cout << "Ocr output: " << outText <<  std::endl;
+
+    //const char type[] = "HI this is a test im testing out this new shit";
+    
 
     //Origin
     /*const int xOrigin = ilerp(rect.left, rect.right, 0.09464508094f);
@@ -395,11 +397,12 @@ int main()
     }*/
 
     /*while (1) {
-        POINT mousePos;
+        POINT mousePos; 
         if (!GetCursorPos(&mousePos)) {
             printErr(GetLastError(), "GetCursorPos");
             return EXIT_FAILURE;
         }
+        ScreenToClient(genshinWnd, &mousePos);
         std::cout << "x: " << mousePos.x << " y: " << mousePos.y << std::endl;
     }*/
     //Cleanup
