@@ -18,13 +18,19 @@
     <ClCompile Include="WinAPI experiment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="bitmapcapture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="bitmapcapture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="ArtifactAttributeEnums.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

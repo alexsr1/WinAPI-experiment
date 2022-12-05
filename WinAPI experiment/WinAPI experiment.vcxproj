@@ -143,12 +143,17 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bitmapcapture.cpp" />
     <ClCompile Include="WinAPI experiment.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArtifactAttributeEnums.h" />
+    <ClInclude Include="bitmapcapture.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

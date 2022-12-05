@@ -1,20 +1,19 @@
 #pragma once
-
 namespace rects {
-	enum class MainStatText {
-		posX = 1111,
-		posY = 228,
-		width = 252,
-		height = 20
+	class TextBox {
+		using ushort = unsigned short;
+	public:
+		ushort posX = 0;
+		ushort posY = 0;
+		ushort width = 0;
+		ushort height = 0;
 	};
-	enum class MainStatValue {
-		posX = 1111,
-		posY = 252,
-		width = 105,
-		height = 33
-	};
-	enum class ArtifactPiece {
-		posX = 111,
-		posY = 159,
-	};
+
+	TextBox mainStatKey{ 1111, 228, 252, 20 };
+	TextBox mainStatValue{ 1111, 252, 200, 33 };
+	TextBox slotKey{ 1111, 159, 192, 18 };
+	TextBox setKey{ 1111, 530, 375,20 };
+
+	TextBox* boxes[] = { &mainStatKey, &mainStatValue, &slotKey, &setKey };
 }
+

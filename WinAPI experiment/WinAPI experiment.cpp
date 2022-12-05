@@ -5,6 +5,8 @@
 #include <memory> 
 #include <tesseract/baseapi.h>
 #include <leptonica/allheaders.h>
+#include "ArtifactAttributeEnums.h"
+#include "bitmapcapture.h"
 
 inline long ilerp(UINT a, UINT b, float t) {
     return std::lround(a + (b - a) * t);
@@ -36,25 +38,6 @@ inline DWORD pressStringKeys(const char keys[]) {
         keys++;
     }
     return 0;
-}
-
-HWND genshinWnd = NULL;
-
-BOOL CALLBACK enumWindowCallback(HWND hWnd, LPARAM lparam) {
-    const size_t maxLength = 128U;
-    std::string title((long long)GetWindowTextLengthA(hWnd) + 1, 'a');
-
-    if (!IsWindowVisible(hWnd)) return TRUE;
-
-    UINT charsCopied = GetWindowTextA(hWnd, &title[0], maxLength);
-    DWORD pId = 0;
-    GetWindowThreadProcessId(hWnd, &pId);
-
-    if (charsCopied && title.find("Genshin Impact") != std::string::npos) {
-        std::cout << title << ": " << pId << "\n";
-        genshinWnd = hWnd;
-    }
-    return TRUE;
 }
 
 inline DWORD cursorClick(int x, int y) {
@@ -98,93 +81,6 @@ inline DWORD mouseWheel(int amount) {
     return 0;
 }
 
-DWORD getScreenBitmap(BITMAP& outBitmap, BITMAPINFOHEADER& bi, BITMAPFILEHEADER& bmfHeader) {
-    HDC screen = GetDC(NULL);
-    HDC cScreen = CreateCompatibleDC(screen);
-
-    int cx = GetSystemMetrics(SM_CXSCREEN);
-    int cy = GetSystemMetrics(SM_CYSCREEN);
-    int x = GetSystemMetrics(SM_XVIRTUALSCREEN); 
-    int y = GetSystemMetrics(SM_YVIRTUALSCREEN);
-
-    HBITMAP hbmScreen = CreateCompatibleBitmap(
-        screen,
-        cx,
-        cy
-    );
-    if (!hbmScreen) {
-        return GetLastError();
-    }
-
-    SelectObject(cScreen, hbmScreen);
-
-    if (!BitBlt(screen,
-        0, 0,
-        cx, cy,
-        cScreen,
-        x, y,
-        CAPTUREBLT | SRCCOPY)) {
-        return GetLastError();
-    }
-
-    if (!GetObject(hbmScreen, sizeof(BITMAP), &outBitmap)) {
-        return GetLastError();
-    }
-
-    bi.biSize = sizeof(BITMAPINFOHEADER);
-    bi.biWidth = outBitmap.bmWidth;
-    bi.biHeight = outBitmap.bmHeight;
-    bi.biPlanes = 1;
-    bi.biBitCount = 24;
-    bi.biCompression = BI_RGB;
-    bi.biSizeImage = 0;
-    bi.biXPelsPerMeter = 0;
-    bi.biYPelsPerMeter = 0;
-    bi.biClrUsed = 0;
-    bi.biClrImportant = 0;
-
-    SIZE_T dwBmpSize = ((outBitmap.bmWidth * bi.biBitCount + 31) / 32) * 4 * outBitmap.bmHeight;
-    
-    char* lpvbitmap = (char*)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, dwBmpSize);
-
-    if (!GetDIBits(screen, hbmScreen, 0,
-        (UINT)outBitmap.bmHeight,
-        lpvbitmap,
-        (BITMAPINFO*)&bi, DIB_RGB_COLORS)) {
-        return GetLastError();
-    }
-    outBitmap.bmBits = lpvbitmap;
-
-    // A file is created, this is where we will save the screen capture.
-    HANDLE hFile = CreateFile(L"captureqwsx.bmp",
-        GENERIC_WRITE,
-        0,
-        NULL,
-        CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL, NULL);
-
-    // Add the size of the headers to the size of the bitmap to get the total file size.
-    SIZE_T dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-
-    // Offset to where the actual bitmap bits start.
-    bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER);
-
-    // Size of the file.
-    bmfHeader.bfSize = dwSizeofDIB;
-
-    // bfType must always be BM for Bitmaps.
-    bmfHeader.bfType = 0x4D42; // BM.
-
-    DWORD dwBytesWritten;
-    WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
-    WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
-    WriteFile(hFile, (LPSTR)lpvbitmap, dwBmpSize, &dwBytesWritten, NULL);
-
-    HeapFree(GetProcessHeap(), 0, lpvbitmap);
-    ReleaseDC(NULL, screen);
-    DeleteDC(cScreen);
-    return 0;
-}
 
 void ocrFile(const char path[]) {
     tesseract::TessBaseAPI* Tess = new tesseract::TessBaseAPI();
@@ -207,88 +103,6 @@ void ocrFile(const char path[]) {
     delete Tess;
     delete[] outText;
     pixDestroy(&image);
-}
-
-bool getBmpData(HWND windowOpt, BITMAPINFOHEADER& bmfhOut, void*& pixelsOut, SIZE_T& dwBmpSizeOut) {
-    int x1, y1, cx, cy;
-
-    // get screen dimensions
-    x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
-    y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
-    cx = GetSystemMetrics(SM_CXSCREEN);
-    cy = GetSystemMetrics(SM_CYSCREEN);
-
-    // copy screen to bitmap
-    HDC     hScreen = GetDC(windowOpt);
-    HDC     hDC = CreateCompatibleDC(hScreen);
-    HBITMAP hBitmap = CreateCompatibleBitmap(hScreen, cx, cy);
-    HGDIOBJ old_obj = SelectObject(hDC, hBitmap);
-    BOOL    bRet = BitBlt(hDC, 0, 0, cx, cy, hScreen, 0, 0, SRCCOPY | CAPTUREBLT);
-    BITMAP bmpScreen;
-    GetObject(hBitmap, sizeof(BITMAP), &bmpScreen);
-
-    bmfhOut.biSize = sizeof(BITMAPINFOHEADER);
-    bmfhOut.biWidth = bmpScreen.bmWidth;
-    bmfhOut.biHeight = bmpScreen.bmHeight;
-    bmfhOut.biPlanes = 1;
-    bmfhOut.biBitCount = 32;
-    bmfhOut.biCompression = BI_RGB;
-    bmfhOut.biSizeImage = 0;
-    bmfhOut.biXPelsPerMeter = 0;
-    bmfhOut.biYPelsPerMeter = 0;
-    bmfhOut.biClrUsed = 0;
-    bmfhOut.biClrImportant = 0;
-
-    dwBmpSizeOut = ((bmpScreen.bmWidth * bmfhOut.biBitCount + 31) / 32) * 4 * bmpScreen.bmHeight;
-
-    pixelsOut = (char*)malloc(dwBmpSizeOut);
-
-    GetDIBits(hScreen, hBitmap, 0,
-        (UINT)bmpScreen.bmHeight,
-        pixelsOut,
-        (BITMAPINFO*)&bmfhOut, DIB_RGB_COLORS);
-
-    //cleanup
-    SelectObject(hDC, old_obj);
-    DeleteDC(hDC);
-    ReleaseDC(NULL, hScreen);
-    DeleteObject(hBitmap);
-
-    return true;
-}
-
-void captureScreen(const char path[])
-{
-    BITMAPFILEHEADER   bmfHeader;
-    BITMAPINFOHEADER   bi;
-    void* lpbitmap;
-    SIZE_T dwBmpSize;
-
-    getBmpData(NULL, bi, lpbitmap, dwBmpSize);
-    
-    // Offset to where the actual bitmap bits start.
-    bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER);
-
-    // Size of the file.
-    bmfHeader.bfSize = dwBmpSize;
-
-    // bfType must always be BM for Bitmaps.
-    bmfHeader.bfType = 0x4D42; // BM.
-
-    DWORD dwBytesWritten = 0;
-    HANDLE hFile = hFile = CreateFileA(path,
-        GENERIC_WRITE,
-        0,
-        NULL,
-        CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL, NULL);
-
-    WriteFile(hFile, (LPSTR)&bmfHeader, sizeof(BITMAPFILEHEADER), &dwBytesWritten, NULL);
-    WriteFile(hFile, (LPSTR)&bi, sizeof(BITMAPINFOHEADER), &dwBytesWritten, NULL);
-    WriteFile(hFile, (LPSTR)lpbitmap, dwBmpSize, &dwBytesWritten, NULL);
-
-    // clean up
-    free(lpbitmap);
 }
 
 Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const size_t dataSize) {
@@ -324,22 +138,20 @@ Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const size_t data
 
 int main()
 {
-    EnumWindows(enumWindowCallback, NULL);
+    /*EnumWindows(bmp::enumWindowCallback, NULL);
 
-    if (!genshinWnd) {
+    if (!bmp::genshinWnd) {
         std::cout << "Genshin not found" << std::endl;
         return EXIT_FAILURE;
     }
 
-    SetForegroundWindow(genshinWnd);
-    Sleep(10);
     for (size_t i = 0; i < 49; i++)
         mouseWheel(-1);
 
     if (!SetForegroundWindow(genshinWnd)) {
         printErr(GetLastError(), "SetForegroundWindow");
         return EXIT_FAILURE;
-    }
+    }*/
 
     RECT rect;
     /*if (!GetWindowRect(genshinWnd, &rect)) {
@@ -355,22 +167,33 @@ int main()
     BITMAPINFOHEADER bmih;
     SIZE_T dwBmpSize;
     void* data;
-    
-    getBmpData(genshinWnd, bmih, data, dwBmpSize);
+
+    bmp::getBmpData(bmp::genshinWnd, bmih, data, dwBmpSize);
     PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
-    
+    pixWrite("heighttestout.bmp", screenPix, IFF_BMP);
+    /*PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
+    PIX* drivePix = pixRead("out.bmp");
 
     if (api->Init("tessdata", "eng")) {
         std::cerr << "Could not initialize tesseract.\n";
         return EXIT_FAILURE;
     }
 
-    pixWrite("out.bmp", screenPix, IFF_BMP);
-    api->SetImage(screenPix);
-    api->SetRectangle(1111, 252, 222, 33);
-    outText = api->GetUTF8Text();
-    std::cout << "Ocr output: " << outText <<  std::endl;
+    api->SetImage(drivePix);
 
+    std::string stats[] = {
+        "Main stat type",
+        "Main stat value",
+        "Artifact type",
+        "Artifact set"
+    };
+    for (size_t i = 0; i < sizeof(stats) / sizeof(stats[0]); i++)
+    {
+        using namespace rects;
+        api->SetRectangle(boxes[i]->posX, boxes[i]->posY, 
+            boxes[i]->width, boxes[i]->height);
+        std::cout << stats[i] << ": " << api->GetUTF8Text() << '\n';
+    }*/
     //const char type[] = "HI this is a test im testing out this new shit";
     
 
@@ -406,10 +229,10 @@ int main()
         std::cout << "x: " << mousePos.x << " y: " << mousePos.y << std::endl;
     }*/
     //Cleanup
-    api->End();
+    /*api->End();
     delete api;
-    //delete[] outText;
+    delete[] outText;
     
-    pixDestroy(&screenPix);
+    pixDestroy(&screenPix);*/
     return 0;
 }
