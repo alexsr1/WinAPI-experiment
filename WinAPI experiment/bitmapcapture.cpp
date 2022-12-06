@@ -16,7 +16,9 @@ namespace bmp {
         GetWindowThreadProcessId(hWnd, &pId);
 
         if (charsCopied && title.find("Genshin Impact") != std::string::npos) {
+#ifdef _DEBUG
             std::cout << title << ": " << pId << "\n";
+#endif // DEBUG
             genshinWnd = hWnd;
         }
         return TRUE;
@@ -114,18 +116,29 @@ namespace bmp {
         int x1, y1, cx, cy;
 
         // get screen dimensions
-        x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
-        y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
-        cx = GetSystemMetrics(SM_CXSCREEN);
-        cy = GetSystemMetrics(SM_CYSCREEN);
+        if (!windowOpt) {
+            x1 = GetSystemMetrics(SM_XVIRTUALSCREEN);
+            y1 = GetSystemMetrics(SM_YVIRTUALSCREEN);
+            cx = GetSystemMetrics(SM_CXSCREEN);
+            cy = GetSystemMetrics(SM_CYSCREEN);
+
+        }
+        else {
+            RECT clientArea;
+            GetClientRect(windowOpt, &clientArea);
+            x1 = clientArea.left;
+            y1 = clientArea.top;
+            cx = clientArea.right - clientArea.left;
+            cy = clientArea.bottom - clientArea.top;
+        }
 
         // copy screen to bitmap
         HDC     hScreen = GetDC(windowOpt);
         HDC     hDC = CreateCompatibleDC(hScreen);
         HBITMAP hBitmap = CreateCompatibleBitmap(hScreen, cx, cy);
         HGDIOBJ old_obj = SelectObject(hDC, hBitmap);
-        BOOL    bRet = BitBlt(hDC, 0, 0, cx, cy, hScreen, 0, 0, SRCCOPY | CAPTUREBLT);
-        BITMAP bmpScreen;
+        BOOL    bRet = BitBlt(hDC, 0, 0, cx, cy, hScreen, x1, y1, SRCCOPY | CAPTUREBLT);
+        BITMAP  bmpScreen;
         GetObject(hBitmap, sizeof(BITMAP), &bmpScreen);
 
         bmfhOut.biSize = sizeof(BITMAPINFOHEADER);
@@ -145,7 +158,7 @@ namespace bmp {
         pixelsOut = (char*)malloc(dwBmpSizeOut);
 
         GetDIBits(hScreen, hBitmap, 0,
-            (UINT)bmpScreen.bmHeight,
+            bmpScreen.bmHeight,
             pixelsOut,
             (BITMAPINFO*)&bmfhOut, DIB_RGB_COLORS);
 
@@ -191,4 +204,14 @@ namespace bmp {
         // clean up
         free(lpbitmap);
     }
+	void drawRect(const rects::TextBox& rect, RGBQUAD color, BITMAPINFOHEADER& dataInfo, RGBQUAD* data) {
+		for (size_t i = rect.posX; i <= rect.posX + rect.width; i++)
+		{
+			data[rect.posY * dataInfo.biWidth + i] = color;
+		}
+		for (size_t i = rect.posY; i <= rect.posY + rect.height; i++)
+		{
+			data[i * dataInfo.biWidth + rect.posX] = color;
+		}
+	}
 }

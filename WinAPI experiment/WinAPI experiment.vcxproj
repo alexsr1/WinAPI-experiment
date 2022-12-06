@@ -116,6 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,6 +136,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -148,13 +150,19 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArtifactData.cpp" />
     <ClCompile Include="bitmapcapture.cpp" />
+    <ClCompile Include="TesseractFunctions.cpp" />
     <ClCompile Include="WinAPI experiment.cpp" />
+    <ClCompile Include="WinapiMacros.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ArtifactAttributeEnums.h" />
+    <ClInclude Include="ArtifactData.h" />
     <ClInclude Include="bitmapcapture.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="TesseractFunctions.h" />
+    <ClInclude Include="WinapiMacros.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WinAPI experiment.rc" />
