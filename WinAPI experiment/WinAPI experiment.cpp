@@ -52,7 +52,7 @@ Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const size_t data
 
 int main()
 {
-    EnumWindows(bmp::enumWindowCallback, NULL);
+    /*EnumWindows(bmp::enumWindowCallback, NULL);
 
     if (!bmp::genshinWnd) {
         std::cout << "Genshin not found" << std::endl;
@@ -76,8 +76,6 @@ int main()
     std::cout << "Rect: \nx: " << rect.left << " y: " << rect.top << "\n";
     std::cout << "x: " << rect.right << " y: " << rect.bottom << "\n";
 #endif
-
-    tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();
     char* outText;
 
     BITMAPINFOHEADER bmih;
@@ -87,13 +85,7 @@ int main()
     bmp::getBmpData(bmp::genshinWnd, bmih, data, dwBmpSize);
     bmih.biHeight *= -1;
     PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
-    PIX* drivePix = pixRead("out.bmp");
-
-    if (api->Init("tessdata", "eng")) {
-        std::cerr << "Could not initialize tesseract.\n";
-        return EXIT_FAILURE;
-    }
-    api->SetImage(screenPix);
+    PIX* drivePix = pixRead("rect.bmp");
 
     using rects::TextBox;
     TextBox boxes[] = {
@@ -116,12 +108,20 @@ int main()
         using namespace rects;
         RGBQUAD red{ 0, 0, 255, 0 };
         bmp::drawRect(boxes[i], red, bmih, (RGBQUAD*)data);
+    }*/
+    PIX* drivePix = pixRead("rect.bmp");
+    tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();
+    if (api->Init("tessdata", "eng")) {
+        std::cerr << "Could not initialize tesseract.\n";
+        return EXIT_FAILURE;
     }
-    
+    api->SetImage(drivePix);
+    void* data = pixGetData(drivePix);
 #ifdef _DEBUG
-    std::cout << "substatCount: " << artifact::numOfSubstats(data, bmih.biHeight, bmih.biWidth) << std::endl;
+    std::cout << "substatCount: " << artifact::numOfSubstats(data, pixGetHeight(drivePix), pixGetWidth(drivePix)) << std::endl;
+    std::cout << "mainStatKey: " << artifact::mainStatKey(api) << std::endl;
 #endif
-    pixWrite("rect.bmp", screenPix, IFF_BMP);
+    //pixWrite("rect.bmp", screenPix, IFF_BMP);
     //const char type[] = "HI this is a test im testing out this new shit";
     
 
@@ -161,6 +161,6 @@ int main()
     delete api;
     //delete[] outText;
     
-    pixDestroy(&screenPix);
+    pixDestroy(&drivePix);
     return 0;
 }

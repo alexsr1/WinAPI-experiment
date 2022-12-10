@@ -10,17 +10,12 @@
 
 namespace artifact {
     using rects::TextBox;
-    SlotKey slotKey(tesseract::TessBaseAPI* api) {
-        TextBox slotKeyBox{ 1111, 159, 192, 18 };
-        api->SetRectangle(slotKeyBox.posX, slotKeyBox.posY,
-            slotKeyBox.width, slotKeyBox.height);
-        
-    }
 
     inline static void strToLower(std::string& str) {
         for (char& c : str)
             if (c >= 'A' && c <= 'Z') c += 32;
     }
+
     inline static void cstrToLower(char* cstr) {
         while (cstr) {
             if (*cstr >= 'A' && *cstr <= 'Z') *cstr += 32;
@@ -28,20 +23,37 @@ namespace artifact {
         }
     }
 
-    inline static std::string& ocrMainStatValue(tesseract::TessBaseAPI* api) {
-        TextBox mainStatValueBox{ 1111, 252, 200, 33 };
-        api->SetRectangle(mainStatValueBox.posX, mainStatValueBox.posY,
-            mainStatValueBox.width, mainStatValueBox.height);
+    inline static std::string getFirstWord(const std::string& text) {
+        std::string firstWord;
+        firstWord.reserve(10);
 
-        char* outText = api->GetUTF8Text();
+        for (char c : text) {
+            if (c == ' ') break;
+            else firstWord += c;
+        }
+
+        return firstWord;
+    }
+
+    inline static char* ocrBox(tesseract::TessBaseAPI* api, rects::TextBox box) {
+        api->SetRectangle(box.posX, box.posY,
+            box.width, box.height);
+        return api->GetUTF8Text();
+    }
+
+    inline static std::string ocrMainStatValue(tesseract::TessBaseAPI* api) {
+        TextBox mainStatValueBox{ 1111, 252, 200, 33 };
+
+        char* outText = ocrBox(api, mainStatValueBox);
         std::string ocrResult(outText);
         strToLower(ocrResult);
 
         delete[] outText;
         return ocrResult;
     }
+
     inline static bool isPercentStat(std::string text) {
-        for (size_t i = text.size() - 1; i >= 0; i--)
+        for (size_t i = text.size() - 1; i < text.size(); i--)
         {
             if (text[i] == '%') return true;
             if (text[i] >= '0' && text[i] <= '9') return false;
@@ -49,7 +61,34 @@ namespace artifact {
         return false;
     }
 
-	StatKey mainStatKey(tesseract::TessBaseAPI* api) {
+    SlotKey slotKey(tesseract::TessBaseAPI* api) {
+        TextBox slotKeyBox{ 1111, 159, 192, 18 };
+
+        char* outText = ocrBox(api, slotKeyBox);
+        std::string slotKeyOcr(outText);
+        strToLower(slotKeyOcr);
+
+        delete[] outText;
+        return getFirstWord(slotKeyOcr);
+    }
+
+    number level(tesseract::TessBaseAPI* api) {
+        TextBox levelBox{ 1116, 359, 44, 20 };
+
+        char* outText = ocrBox(api, levelBox);
+        std::string slotKeyOcr(outText);
+        size_t plusCharIdx = (size_t)-1;
+        for (size_t i = 0; i < slotKeyOcr.size(); i++)
+        {
+            if (slotKeyOcr[i] == '+')
+                plusCharIdx = i;
+        }
+
+        delete[] outText;
+        return slotKeyOcr.substr(0, plusCharIdx);
+    }
+
+    StatKey mainStatKey(tesseract::TessBaseAPI* api) {
         TextBox mainStatKeyBox{ 1111, 228, 200, 20 };
         RGBQUAD red{ 0, 0, 255, 0 };
 
@@ -59,12 +98,7 @@ namespace artifact {
         StatKey StatKeyStr(outText);
         strToLower(StatKeyStr);
 
-        std::string firstWord;
-        firstWord.reserve(10);
-        for (char c : StatKeyStr) {
-            if (c == ' ') break;
-            else firstWord += c;
-        }
+        std::string firstWord = getFirstWord(StatKeyStr);
 
         //https://frzyc.github.io/genshin-optimizer/#/doc/StatKey
         std::unordered_map<std::string, const char*> StatKeyMap{
@@ -98,14 +132,19 @@ namespace artifact {
                 return std::string("atk_");
             case 'd':
                 return std::string("def_");
-           }
+            }
         }
-#ifdef _DEBUG
-        std::cout << "mainStatKey" << ": " << StatKeyStr;
-#endif
         delete[] outText;
         return firstWord;
-	}
+    }
+
+    static inline bool operator==(RGBQUAD first, RGBQUAD second) {
+        return
+            first.rgbBlue == second.rgbBlue &&
+            first.rgbGreen == second.rgbGreen &&
+            first.rgbRed == second.rgbRed &&
+            first.rgbReserved == second.rgbReserved;
+    }
     size_t numOfSubstats(const void* pixelData, const size_t areaHeight, const size_t areaWidth) {
         unsigned int substatPointX = 1123, substatPointY = 410;
         constexpr int substatDistanceY = 32, textBoxDistanceX = 10, textBoxDistanceY = -8;
@@ -114,11 +153,7 @@ namespace artifact {
         RGBQUAD* rgbData = (RGBQUAD*)pixelData;
         RGBQUAD currentPixel = rgbData[substatPointY * areaWidth + substatPointX];
 
-        while (
-            currentPixel.rgbReserved == targetColor.rgbReserved &&
-            currentPixel.rgbGreen == targetColor.rgbGreen &&
-            currentPixel.rgbRed == targetColor.rgbRed
-            )
+        while (currentPixel == targetColor)
         {
             substatCount++;
             substatPointY += substatDistanceY;
