@@ -1,7 +1,8 @@
 #pragma once
-#include <Windows.h>
+//#include <Windows.h>
 
 #include <string>
+#include <unordered_map>
 
 #include <tesseract/baseapi.h>
 namespace artifact {
@@ -10,7 +11,11 @@ namespace artifact {
 	using SlotKey = std::string;
 	using StatKey = std::string;
 	using boolean = std::string;
-	using ISubstat = std::string;
+	struct ISubstat {
+		StatKey key;
+		float value;
+		ISubstat() : key(""), value(0.f) {}
+	};
 
 	SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum);
 	SlotKey slotKey(tesseract::TessBaseAPI* api);
@@ -19,5 +24,5 @@ namespace artifact {
 	StatKey mainStatKey(tesseract::TessBaseAPI* api);
 	boolean lock(const void* pixelData, size_t width);
 	unsigned short numOfSubstats(const void* pixelData, size_t width);
-	ISubstat* substats(tesseract::TessBaseAPI, size_t num);
+	ISubstat* substats(tesseract::TessBaseAPI* api, size_t num);
 }

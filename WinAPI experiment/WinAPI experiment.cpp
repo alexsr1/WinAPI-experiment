@@ -90,7 +90,8 @@ int main()
         TextBox{ 1111, 252, 200, 33 },
         TextBox{ 1111, 159, 192, 18 },
         TextBox{ 1116, 359, 44, 20 },
-        TextBox{ 1114, static_cast<unsigned short>(402 + artifact::numOfSubstats(data, bmih.biWidth) * 32), 320, 23}
+        TextBox{ 1114, static_cast<unsigned short>(402 + artifact::numOfSubstats(data, bmih.biWidth) * 32), 320, 23},
+        TextBox{ 1133, 402, 303, 22 }
     };
 
     constexpr size_t numOfTextboxes = sizeof(boxes) / sizeof(TextBox);
@@ -99,7 +100,8 @@ int main()
         "Main stat value",
         "Artifact type",
         "Level", 
-        "Set"
+        "Set",
+        "First substat"
     };
 
     for (size_t i = 0; i < sizeof(stats) / sizeof(stats[0]); i++)
@@ -118,10 +120,12 @@ int main()
     api->SetImage(screenPix);
     //void* data = pixGetData(drivePix);
 #ifdef _DEBUG
+    unsigned short substatNum = artifact::numOfSubstats(data, bmih.biWidth);
     std::cout << "substatCount: " << artifact::numOfSubstats(data, bmih.biWidth) << std::endl;
     std::cout << "mainStatKey: " << artifact::mainStatKey(api) << std::endl;
     std::cout << "rarity: " << artifact::rarity(data, bmih.biWidth) << std::endl;
-    std::cout << "set: " << artifact::setKey(api, artifact::numOfSubstats(data, bmih.biWidth)) << std::endl;
+    std::cout << "set: " << artifact::setKey(api, substatNum) << std::endl;
+    artifact::substats(api, substatNum);
 #endif
     //pixWrite("rect.bmp", screenPix, IFF_BMP);
     //const char type[] = "HI this is a test im testing out this new shit";

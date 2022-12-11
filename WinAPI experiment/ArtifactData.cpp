@@ -12,6 +12,69 @@
 namespace artifact {
     using rects::TextBox;
 
+    //https://frzyc.github.io/genshin-optimizer/#/doc/StatKey
+    std::unordered_map<std::string, const char*> StatKeyMap{
+        {"elemental", "eleMas"},
+        {"energy", "enerRech_"},
+        {"healing", "heal_"},
+        {"physical", "physical_dmg_"},
+        {"anemo", "anemo_dmg_"},
+        {"geo", "geo_dmg_"},
+        {"electro", "electro_dmg_"},
+        {"hydro", "hydro_dmg_"},
+        {"pyro", "pyro_dmg_"},
+        {"cryo", "cryo_dmg_"},
+        {"dendro", "dendro_dmg_"}
+    };
+
+    //https://frzyc.github.io/genshin-optimizer/#/doc/ArtifactSetKey
+    //NEEDS FIX
+    std::unordered_map<std::string, std::string> SetKeyMap{
+        { "adve", "Adventurer" },
+        { "arch", "ArchaicPetra" },
+        { "bers", "Berserker" },
+        { "bliz", "BlizzardStrayer" },
+        { "bloo", "BloodstainedChivalry" },
+        { "brav", "BraveHeart" },
+        { "crim", "CrimsonWitchOfFlames" },
+        { "deep", "DeepwoodMemories" },
+        { "defe", "DefendersWill" },
+        { "dese", "DesertPavilionChronicle" },
+        { "echo", "EchoesOfAnOffering" },
+        { "embl", "EmblemOfSeveredFate" },
+        { "flow", "FlowerOfParadiseLost" },
+        { "gamb", "Gambler" },
+        { "gild", "GildedDreams" },
+        { "glad", "GladiatorsFinale" },
+        { "hear", "HeartOfDepth" },
+        { "husk", "HuskOfOpulentDreams" },
+        { "inst", "Instructor" },
+        { "lava", "Lavawalker" },
+        { "luck", "LuckyDog" },
+        { "maid", "MaidenBeloved" },
+        { "mart", "MartialArtist" },
+        { "nobl", "NoblesseOblige" },
+        { "ocea", "OceanHuedClam" },
+        { "pale", "PaleFlame" },
+        //{ "pray", "PrayersForDestiny" },
+        //{ "pray", "PrayersForIllumination" },
+        //{ "pray", "PrayersForWisdom" },
+        //{ "pray", "PrayersToSpringtime" },
+        { "reso", "ResolutionOfSojourner" },
+        { "retr", "RetracingBolide" },
+        { "scho", "Scholar" },
+        { "shim", "ShimenawasReminiscence" },
+        { "tena", "TenacityOfTheMillelith" },
+        { "thee", "TheExile" },
+        //{ "thun", "ThunderingFury" },
+        //{ "thun", "Thundersoother" },
+        { "tiny", "TinyMiracle" },
+        { "trav", "TravelingDoctor" },
+        { "verm", "VermillionHereafter" },
+        { "viri", "ViridescentVenerer" },
+        { "wand", "WanderersTroupe" }
+    };
+
     inline static void strToLower(std::string& str) {
         std::transform(str.begin(), str.end(), str.begin(),
             [](unsigned char c) { return std::tolower(c); } 
@@ -57,7 +120,7 @@ namespace artifact {
     inline static bool isPercentStat(std::string& text) {
         for (size_t i = text.size() - 1; i < text.size(); i--)
         {
-            if (text[i] == '%') return true;
+            if (text[i] == '%' || text[i] == '/') return true;
             if (text[i] >= '0' && text[i] <= '9') return false;
         }
         return false;
@@ -85,9 +148,33 @@ namespace artifact {
 
         char* outText = ocrBox(api, slotKeyBox);
         std::string slotKeyOcr(outText);
-        lettersOnly(slotKeyOcr);
+        strToLower(slotKeyOcr);
+        std::string key = slotKeyOcr.substr(0, 4);
 
-        return slotKeyOcr;
+        auto it = SetKeyMap.find(key);
+        if (it != SetKeyMap.end()) return (SetKey)it->second;
+
+        if (key == "pray") {
+            std::unordered_map<std::string, std::string> prayersSets {
+                { "for destin", "PrayersForDestiny" },
+                { "for illumi", "PrayersForIllumination" },
+                { "for wisdom", "PrayersForWisdom" },
+                { "to springt", "PrayersToSpringtime" }
+            };
+
+            it = prayersSets.find(slotKeyOcr.substr(8, 10));
+            if (it != prayersSets.end()) return (SetKey)it->second;
+        }
+
+        if (key == "thun") {
+            switch (slotKeyOcr[7]) {
+            case 'i':
+                return (SetKey)"ThunderingFury";
+            case 's':
+                return (SetKey)"Thundersoother";
+            }
+        }
+        return "";
     }
 
     SlotKey slotKey(tesseract::TessBaseAPI* api) {
@@ -134,32 +221,10 @@ namespace artifact {
         return (number)std::to_string(count);
     }
 
-    StatKey mainStatKey(tesseract::TessBaseAPI* api) {
-        TextBox mainStatKeyBox{ 1111, 228, 200, 20 };
-        RGBQUAD red{ 0, 0, 255, 0 };
-
-        api->SetRectangle(mainStatKeyBox.posX, mainStatKeyBox.posY,
-            mainStatKeyBox.width, mainStatKeyBox.height);
-        char* outText = api->GetUTF8Text();
-        StatKey StatKeyStr(outText);
-        strToLower(StatKeyStr);
-
+    StatKey ocrtextToStatKey(std::string StatKeyStr, std::string mainStatValue) {
         std::string firstWord = getFirstWord(StatKeyStr);
+        strToLower(firstWord);
 
-        //https://frzyc.github.io/genshin-optimizer/#/doc/StatKey
-        std::unordered_map<std::string, const char*> StatKeyMap{
-            {"elemental", "eleMas"},
-            {"energy", "enerRech_"},
-            {"healing", "heal_"},
-            {"physical", "physical_dmg_"},
-            {"anemo", "anemo_dmg_"},
-            {"geo", "geo_dmg_"},
-            {"electro", "electro_dmg_"},
-            {"hydro", "hydro_dmg_"},
-            {"pyro", "pyro_dmg_"},
-            {"cryo", "cryo_dmg_"},
-            {"dendro", "dendro_dmg_"}
-        };
         auto it = StatKeyMap.find(firstWord);
         if (it != StatKeyMap.end()) return (StatKey)it->second;
 
@@ -173,21 +238,33 @@ namespace artifact {
             }
         }
 
-        std::string mainStatValue = ocrMainStatValue(api);
         bool isPercent = isPercentStat(mainStatValue);
-		switch (firstWord[0]) {
-		case 'h':
+        switch (firstWord[0]) {
+        case 'h':
             if (isPercent) return (StatKey)"hp_";
             return (StatKey)"hp";
-		case 'a':
+        case 'a':
             if (isPercent) return (StatKey)"atk_";
             return (StatKey)"atk";
-		case 'd':
+        case 'd':
             if (isPercent) return (StatKey)"def_";
             return (StatKey)"def";
-		}
+        }
+    }
+
+    StatKey mainStatKey(tesseract::TessBaseAPI* api) {
+        TextBox mainStatKeyBox{ 1111, 228, 200, 20 };
+        RGBQUAD red{ 0, 0, 255, 0 };
+
+        api->SetRectangle(mainStatKeyBox.posX, mainStatKeyBox.posY,
+            mainStatKeyBox.width, mainStatKeyBox.height);
+        char* outText = api->GetUTF8Text();
+        StatKey StatKeyStr(outText);
+
+        StatKey res = ocrtextToStatKey(StatKeyStr, ocrMainStatValue(api));
 
         delete[] outText;
+        if (res != "") return res;
         return "";
     }
 
@@ -208,5 +285,18 @@ namespace artifact {
         }
 
         return substatCount;
+    }
+
+    ISubstat* substats(tesseract::TessBaseAPI* api, size_t num) {
+        ISubstat substatsBuffer[4];
+
+        size_t yOffset = 32;
+        TextBox substatBox{ 1133, 402, 303, 22 };
+
+        char* outText = ocrBox(api, substatBox);
+        std::string substatStr(outText);
+        
+        delete[] outText;
+        return substatsBuffer;
     }
 }
