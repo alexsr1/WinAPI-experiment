@@ -23,7 +23,7 @@ inline void printErr(DWORD err, const char errSrc[]) {
 }
 
 
-Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const size_t dataSize) {
+Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const LONG dataSize) {
     Pix* bmpPix = pixCreate(info.biWidth, info.biHeight, info.biBitCount);
 
     if ((bmpPix = pixCreateHeader(info.biWidth, info.biHeight, info.biBitCount)) == NULL)
@@ -52,15 +52,12 @@ Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const size_t data
 
 int main()
 {
-    /*EnumWindows(bmp::enumWindowCallback, NULL);
+    EnumWindows(bmp::enumWindowCallback, NULL);
 
     if (!bmp::genshinWnd) {
         std::cout << "Genshin not found" << std::endl;
         return EXIT_FAILURE;
     }
-
-    for (size_t i = 0; i < 49; i++)
-        mouseWheel(-1);
 
     if (!SetForegroundWindow(bmp::genshinWnd)) {
         printErr(GetLastError(), "SetForegroundWindow");
@@ -79,20 +76,21 @@ int main()
     char* outText;
 
     BITMAPINFOHEADER bmih;
-    SIZE_T dwBmpSize;
+    LONG dwBmpSize;
     void* data;
 
     bmp::getBmpData(bmp::genshinWnd, bmih, data, dwBmpSize);
     bmih.biHeight *= -1;
     PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
-    PIX* drivePix = pixRead("rect.bmp");
+    //PIX* drivePix = pixRead("rect.bmp");
 
     using rects::TextBox;
     TextBox boxes[] = {
         TextBox{ 1111, 228, 200, 20 },
         TextBox{ 1111, 252, 200, 33 },
         TextBox{ 1111, 159, 192, 18 },
-        TextBox{ 1116, 359, 44, 20 }
+        TextBox{ 1116, 359, 44, 20 },
+        TextBox{ 1114, static_cast<unsigned short>(402 + artifact::numOfSubstats(data, bmih.biWidth) * 32), 320, 23}
     };
 
     constexpr size_t numOfTextboxes = sizeof(boxes) / sizeof(TextBox);
@@ -100,26 +98,30 @@ int main()
         "Main stat type",
         "Main stat value",
         "Artifact type",
-        "Level"
+        "Level", 
+        "Set"
     };
 
     for (size_t i = 0; i < sizeof(stats) / sizeof(stats[0]); i++)
     {
         using namespace rects;
         RGBQUAD red{ 0, 0, 255, 0 };
-        bmp::drawRect(boxes[i], red, bmih, (RGBQUAD*)data);
-    }*/
-    PIX* drivePix = pixRead("rect.bmp");
+        bmp::drawRect(boxes[i], red, bmih.biWidth, (RGBQUAD*)data);
+    }
+    pixWrite("rect.bmp", screenPix, IFF_BMP);
+    //PIX* drivePix = pixRead("rect.bmp");
     tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();
     if (api->Init("tessdata", "eng")) {
         std::cerr << "Could not initialize tesseract.\n";
         return EXIT_FAILURE;
     }
-    api->SetImage(drivePix);
-    void* data = pixGetData(drivePix);
+    api->SetImage(screenPix);
+    //void* data = pixGetData(drivePix);
 #ifdef _DEBUG
-    std::cout << "substatCount: " << artifact::numOfSubstats(data, pixGetHeight(drivePix), pixGetWidth(drivePix)) << std::endl;
+    std::cout << "substatCount: " << artifact::numOfSubstats(data, bmih.biWidth) << std::endl;
     std::cout << "mainStatKey: " << artifact::mainStatKey(api) << std::endl;
+    std::cout << "rarity: " << artifact::rarity(data, bmih.biWidth) << std::endl;
+    std::cout << "set: " << artifact::setKey(api, artifact::numOfSubstats(data, bmih.biWidth)) << std::endl;
 #endif
     //pixWrite("rect.bmp", screenPix, IFF_BMP);
     //const char type[] = "HI this is a test im testing out this new shit";
@@ -161,6 +163,6 @@ int main()
     delete api;
     //delete[] outText;
     
-    pixDestroy(&drivePix);
+    pixDestroy(&screenPix);
     return 0;
 }

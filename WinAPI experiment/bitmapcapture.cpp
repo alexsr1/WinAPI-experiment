@@ -69,7 +69,7 @@ namespace bmp {
         bi.biClrUsed = 0;
         bi.biClrImportant = 0;
 
-        SIZE_T dwBmpSize = ((outBitmap.bmWidth * bi.biBitCount + 31) / 32) * 4 * outBitmap.bmHeight;
+        DWORD dwBmpSize = ((outBitmap.bmWidth * bi.biBitCount + 31) / 32) * 4 * outBitmap.bmHeight;
 
         char* lpvbitmap = (char*)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, dwBmpSize);
 
@@ -90,7 +90,7 @@ namespace bmp {
             FILE_ATTRIBUTE_NORMAL, NULL);
 
         // Add the size of the headers to the size of the bitmap to get the total file size.
-        SIZE_T dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+        DWORD dwSizeofDIB = dwBmpSize + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
 
         // Offset to where the actual bitmap bits start.
         bmfHeader.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + (DWORD)sizeof(BITMAPINFOHEADER);
@@ -112,7 +112,7 @@ namespace bmp {
         return 0;
     }
 
-    bool getBmpData(HWND windowOpt, BITMAPINFOHEADER& bmfhOut, void*& pixelsOut, SIZE_T& dwBmpSizeOut) {
+    bool getBmpData(HWND windowOpt, BITMAPINFOHEADER& bmfhOut, void*& pixelsOut, LONG& dwBmpSizeOut) {
         int x1, y1, cx, cy;
 
         // get screen dimensions
@@ -176,7 +176,7 @@ namespace bmp {
         BITMAPFILEHEADER   bmfHeader;
         BITMAPINFOHEADER   bi;
         void* lpbitmap;
-        SIZE_T dwBmpSize;
+        LONG dwBmpSize;
 
         getBmpData(NULL, bi, lpbitmap, dwBmpSize);
 
@@ -204,14 +204,18 @@ namespace bmp {
         // clean up
         free(lpbitmap);
     }
-	void drawRect(const rects::TextBox& rect, RGBQUAD color, BITMAPINFOHEADER& dataInfo, RGBQUAD* data) {
+	void drawRect(const rects::TextBox& rect, RGBQUAD color, LONG width, RGBQUAD* data) {
+        //top horizontal
 		for (size_t i = rect.posX; i <= rect.posX + rect.width; i++)
-		{
-			data[rect.posY * dataInfo.biWidth + i] = color;
-		}
+			data[rect.posY * width + i] = color;
+        //left vertical
 		for (size_t i = rect.posY; i <= rect.posY + rect.height; i++)
-		{
-			data[i * dataInfo.biWidth + rect.posX] = color;
-		}
+			data[i * width + rect.posX] = color;
+        //bottom horizontal
+        for (size_t i = rect.posX; i <= rect.posX + rect.width; i++)
+            data[(rect.posY + rect.height) * width + i] = color;
+        //right vertical
+        for (size_t i = rect.posY; i <= rect.posY + rect.height; i++)
+            data[i * width + rect.posX + rect.width] = color;
 	}
 }

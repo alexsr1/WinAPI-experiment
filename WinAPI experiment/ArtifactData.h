@@ -12,12 +12,12 @@ namespace artifact {
 	using boolean = std::string;
 	using ISubstat = std::string;
 
-	SetKey setKey(tesseract::TessBaseAPI* api, size_t substatNum);
+	SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum);
 	SlotKey slotKey(tesseract::TessBaseAPI* api);
 	number level(tesseract::TessBaseAPI* api);
-	number rarity(const void* pixelData, size_t areaHeight, size_t areaWidth);
+	number rarity(const void* pixelData, size_t width);
 	StatKey mainStatKey(tesseract::TessBaseAPI* api);
-	boolean lock(const void* pixelData, size_t areaHeight, size_t areaWidth);
-	size_t numOfSubstats(const void* pixelData, size_t areaHeight, size_t areaWidth);
+	boolean lock(const void* pixelData, size_t width);
+	unsigned short numOfSubstats(const void* pixelData, size_t width);
 	ISubstat* substats(tesseract::TessBaseAPI, size_t num);
 }

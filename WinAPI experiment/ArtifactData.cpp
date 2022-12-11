@@ -3,6 +3,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <memory>
+#include <algorithm>
 
 #include "ArtifactData.h"
 #include "ArtifactAttributeEnums.h"
@@ -12,8 +13,9 @@ namespace artifact {
     using rects::TextBox;
 
     inline static void strToLower(std::string& str) {
-        for (char& c : str)
-            if (c >= 'A' && c <= 'Z') c += 32;
+        std::transform(str.begin(), str.end(), str.begin(),
+            [](unsigned char c) { return std::tolower(c); } 
+        );
     }
 
     inline static void cstrToLower(char* cstr) {
@@ -52,13 +54,40 @@ namespace artifact {
         return ocrResult;
     }
 
-    inline static bool isPercentStat(std::string text) {
+    inline static bool isPercentStat(std::string& text) {
         for (size_t i = text.size() - 1; i < text.size(); i--)
         {
             if (text[i] == '%') return true;
             if (text[i] >= '0' && text[i] <= '9') return false;
         }
         return false;
+    }
+
+    static inline bool operator==(RGBQUAD first, RGBQUAD second) {
+        return
+            first.rgbBlue == second.rgbBlue &&
+            first.rgbGreen == second.rgbGreen &&
+            first.rgbRed == second.rgbRed &&
+            first.rgbReserved == second.rgbReserved;
+    }
+
+    static inline void lettersOnly(std::string& s) {
+        for (auto it = s.begin(); it != s.end(); it++)
+        {
+            if (!((*it >= 'a' && *it <= 'z') || (*it >= 'A' && *it <= 'Z')))
+                s.erase(it);
+        }
+    }
+
+    SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum) {
+        unsigned short yPos = 402 + substatNum * 32;
+        TextBox slotKeyBox{ 1112, yPos, 320, 23 };
+
+        char* outText = ocrBox(api, slotKeyBox);
+        std::string slotKeyOcr(outText);
+        lettersOnly(slotKeyOcr);
+
+        return slotKeyOcr;
     }
 
     SlotKey slotKey(tesseract::TessBaseAPI* api) {
@@ -88,6 +117,23 @@ namespace artifact {
         return slotKeyOcr.substr(0, plusCharIdx);
     }
 
+    number rarity(const void* pixelData, size_t width) {
+        size_t constexpr xDist = 28, xStartPos = 1124, yPos = 310;
+        //R: 50, G: 204, B: 255
+        RGBQUAD targetColor{ 255, 255, 204, 50 };
+        RGBQUAD* rgbData = (RGBQUAD*)pixelData;
+
+        RGBQUAD currentColor = rgbData[yPos * width + xStartPos];
+        LONG count = 0;
+        while (currentColor == targetColor) {
+            count++;
+            size_t nextIndex = yPos * width + xStartPos + xDist * count;
+            currentColor = rgbData[nextIndex];
+        }
+
+        return (number)std::to_string(count);
+    }
+
     StatKey mainStatKey(tesseract::TessBaseAPI* api) {
         TextBox mainStatKeyBox{ 1111, 228, 200, 20 };
         RGBQUAD red{ 0, 0, 255, 0 };
@@ -115,49 +161,49 @@ namespace artifact {
             {"dendro", "dendro_dmg_"}
         };
         auto it = StatKeyMap.find(firstWord);
-        if (it != StatKeyMap.end()) return it->second;
+        if (it != StatKeyMap.end()) return (StatKey)it->second;
 
         //Crit DMG or Crit Rate
-        if (firstWord == "crit") {
-            std::string secondWord = StatKeyStr.substr(sizeof("crit"));
-            if (secondWord == "dmg") return std::string("critDMG");
-            else return std::string("critRate");
-        }
-
-        if (isPercentStat(ocrMainStatValue(api))) {
-            switch (firstWord[0]) {
-            case 'h':
-                return std::string("hp_");
-            case 'a':
-                return std::string("atk_");
+        if (StatKeyStr.substr(0, 4) == "crit") {
+            switch (StatKeyStr[4]) {
+            case 'r':
+                return (StatKey)"critRate_";
             case 'd':
-                return std::string("def_");
+                return (StatKey)"critDMG_";
             }
         }
+
+        std::string mainStatValue = ocrMainStatValue(api);
+        bool isPercent = isPercentStat(mainStatValue);
+		switch (firstWord[0]) {
+		case 'h':
+            if (isPercent) return (StatKey)"hp_";
+            return (StatKey)"hp";
+		case 'a':
+            if (isPercent) return (StatKey)"atk_";
+            return (StatKey)"atk";
+		case 'd':
+            if (isPercent) return (StatKey)"def_";
+            return (StatKey)"def";
+		}
+
         delete[] outText;
-        return firstWord;
+        return "";
     }
 
-    static inline bool operator==(RGBQUAD first, RGBQUAD second) {
-        return
-            first.rgbBlue == second.rgbBlue &&
-            first.rgbGreen == second.rgbGreen &&
-            first.rgbRed == second.rgbRed &&
-            first.rgbReserved == second.rgbReserved;
-    }
-    size_t numOfSubstats(const void* pixelData, const size_t areaHeight, const size_t areaWidth) {
+    unsigned short numOfSubstats(const void* pixelData, const size_t width) {
         unsigned int substatPointX = 1123, substatPointY = 410;
         constexpr int substatDistanceY = 32, textBoxDistanceX = 10, textBoxDistanceY = -8;
-        size_t substatCount = 0;
+        unsigned short substatCount = 0;
         RGBQUAD targetColor{ 255, 73, 83, 102 };
         RGBQUAD* rgbData = (RGBQUAD*)pixelData;
-        RGBQUAD currentPixel = rgbData[substatPointY * areaWidth + substatPointX];
+        RGBQUAD currentPixel = rgbData[substatPointY * width + substatPointX];
 
         while (currentPixel == targetColor)
         {
             substatCount++;
             substatPointY += substatDistanceY;
-            size_t nextIndex = substatPointY * areaWidth + substatPointX;
+            size_t nextIndex = substatPointY * width + substatPointX;
             currentPixel = rgbData[nextIndex];
         }
 
