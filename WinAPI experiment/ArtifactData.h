@@ -13,8 +13,8 @@ namespace artifact {
 	using boolean = std::string;
 	struct ISubstat {
 		StatKey key;
-		float value;
-		ISubstat() : key(""), value(0.f) {}
+		std::string value;
+		ISubstat() : key(""), value("") {}
 	};
 
 	SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum);

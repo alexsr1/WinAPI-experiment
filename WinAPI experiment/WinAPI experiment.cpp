@@ -50,6 +50,10 @@ Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const LONG dataSi
 	return bmpPix;
 }
 
+std::ostream& operator<<(std::ostream& out, artifact::ISubstat substat) {
+    return out << substat.key << ": " << substat.value;
+}
+
 int main()
 {
     EnumWindows(bmp::enumWindowCallback, NULL);
@@ -119,14 +123,18 @@ int main()
     }
     api->SetImage(screenPix);
     //void* data = pixGetData(drivePix);
-#ifdef _DEBUG
+//#ifdef _DEBUG
     unsigned short substatNum = artifact::numOfSubstats(data, bmih.biWidth);
     std::cout << "substatCount: " << artifact::numOfSubstats(data, bmih.biWidth) << std::endl;
     std::cout << "mainStatKey: " << artifact::mainStatKey(api) << std::endl;
     std::cout << "rarity: " << artifact::rarity(data, bmih.biWidth) << std::endl;
     std::cout << "set: " << artifact::setKey(api, substatNum) << std::endl;
-    artifact::substats(api, substatNum);
-#endif
+    artifact::ISubstat* test = artifact::substats(api, substatNum);
+    for (size_t i = 0; i < substatNum; i++)
+    {
+        std::cout << "Substat" << i << ": " << test[i] << '\n';
+    }
+//#endif
     //pixWrite("rect.bmp", screenPix, IFF_BMP);
     //const char type[] = "HI this is a test im testing out this new shit";
     

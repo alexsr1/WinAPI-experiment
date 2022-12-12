@@ -288,15 +288,33 @@ namespace artifact {
     }
 
     ISubstat* substats(tesseract::TessBaseAPI* api, size_t num) {
-        ISubstat substatsBuffer[4];
+        static ISubstat substatsBuffer[4];
 
-        size_t yOffset = 32;
+        const size_t yOffset = 32;
         TextBox substatBox{ 1133, 402, 303, 22 };
-
-        char* outText = ocrBox(api, substatBox);
-        std::string substatStr(outText);
         
-        delete[] outText;
+        for (size_t i = 0; i < num; i++) {
+            char* outText = ocrBox(api, substatBox);
+            std::string substatStr(outText);
+
+            size_t plusIdx = 0;
+            for (; plusIdx < substatStr.size(); plusIdx++)
+                if (substatStr[plusIdx] == '+') break;
+            
+            size_t percentIdx = substatStr.size() - 1;
+            for (; percentIdx < substatStr.size(); percentIdx--)
+                if (substatStr[percentIdx] == '%' || substatStr[percentIdx] == '/') break;
+
+            std::string substatStatkey = substatStr.substr(0, plusIdx);
+            std::string substatValue = substatStr.substr(plusIdx + 1, percentIdx - plusIdx);
+
+            substatsBuffer[i].key = ocrtextToStatKey(substatStatkey, substatValue);
+            substatsBuffer[i].value = substatStr.substr(plusIdx + 1, percentIdx - (plusIdx + 1));
+
+            substatBox.posY += yOffset;
+            delete[] outText;
+        }
+
         return substatsBuffer;
     }
 }
