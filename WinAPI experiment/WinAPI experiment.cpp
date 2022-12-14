@@ -89,13 +89,16 @@ int main()
     //PIX* drivePix = pixRead("rect.bmp");
 
     using rects::TextBox;
+    TextBox runtimeSetKeyBox = artifact::setKeyBox;
+    runtimeSetKeyBox.posY += artifact::numOfSubstats(data, bmih.biWidth) * 32;
+
     TextBox boxes[] = {
-        TextBox{ 1111, 228, 200, 20 },
-        TextBox{ 1111, 252, 200, 33 },
-        TextBox{ 1111, 159, 192, 18 },
-        TextBox{ 1116, 359, 44, 20 },
-        TextBox{ 1114, static_cast<unsigned short>(402 + artifact::numOfSubstats(data, bmih.biWidth) * 32), 320, 23},
-        TextBox{ 1133, 402, 303, 22 }
+        artifact::mainStatKeyBox,
+        artifact::mainStatValueBox,
+        artifact::slotKeyBox,
+        artifact::levelBox,
+        runtimeSetKeyBox,
+        artifact::substatBox
     };
 
     constexpr size_t numOfTextboxes = sizeof(boxes) / sizeof(TextBox);
@@ -129,6 +132,7 @@ int main()
     std::cout << "mainStatKey: " << artifact::mainStatKey(api) << std::endl;
     std::cout << "rarity: " << artifact::rarity(data, bmih.biWidth) << std::endl;
     std::cout << "set: " << artifact::setKey(api, substatNum) << std::endl;
+    std::cout << "lock: " << artifact::lock(data, bmih.biWidth) << std::endl;
     artifact::ISubstat* test = artifact::substats(api, substatNum);
     for (size_t i = 0; i < substatNum; i++)
     {

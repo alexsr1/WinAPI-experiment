@@ -5,6 +5,9 @@
 #include <unordered_map>
 
 #include <tesseract/baseapi.h>
+
+#include "ArtifactAttributeEnums.h"
+
 namespace artifact {
 	using number = std::string;
 	using SetKey = std::string;
@@ -16,6 +19,15 @@ namespace artifact {
 		std::string value;
 		ISubstat() : key(""), value("") {}
 	};
+
+	using rects::TextBox;
+	constexpr TextBox mainStatKeyBox{ 1111, 224, 200, 24 };
+	constexpr TextBox mainStatValueBox{ 1111, 252, 200, 33 };
+	constexpr TextBox slotKeyBox{ 1111, 159, 192, 18 };
+	constexpr TextBox levelBox{ 1116, 359, 44, 20 };
+	constexpr TextBox substatBox{ 1133, 401, 303, 22 };
+	constexpr TextBox setKeyBox{ 1112, 402, 320, 23 };
+
 
 	SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum);
 	SlotKey slotKey(tesseract::TessBaseAPI* api);

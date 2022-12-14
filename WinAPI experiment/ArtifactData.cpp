@@ -107,8 +107,6 @@ namespace artifact {
     }
 
     inline static std::string ocrMainStatValue(tesseract::TessBaseAPI* api) {
-        TextBox mainStatValueBox{ 1111, 252, 200, 33 };
-
         char* outText = ocrBox(api, mainStatValueBox);
         std::string ocrResult(outText);
         strToLower(ocrResult);
@@ -144,7 +142,6 @@ namespace artifact {
 
     SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum) {
         unsigned short yPos = 402 + substatNum * 32;
-        TextBox slotKeyBox{ 1112, yPos, 320, 23 };
 
         char* outText = ocrBox(api, slotKeyBox);
         std::string slotKeyOcr(outText);
@@ -178,7 +175,6 @@ namespace artifact {
     }
 
     SlotKey slotKey(tesseract::TessBaseAPI* api) {
-        TextBox slotKeyBox{ 1111, 159, 192, 18 };
 
         char* outText = ocrBox(api, slotKeyBox);
         std::string slotKeyOcr(outText);
@@ -189,7 +185,6 @@ namespace artifact {
     }
 
     number level(tesseract::TessBaseAPI* api) {
-        TextBox levelBox{ 1116, 359, 44, 20 };
 
         char* outText = ocrBox(api, levelBox);
         std::string slotKeyOcr(outText);
@@ -250,11 +245,10 @@ namespace artifact {
             if (isPercent) return (StatKey)"def_";
             return (StatKey)"def";
         }
+        return "";
     }
 
     StatKey mainStatKey(tesseract::TessBaseAPI* api) {
-        TextBox mainStatKeyBox{ 1111, 228, 200, 20 };
-        RGBQUAD red{ 0, 0, 255, 0 };
 
         api->SetRectangle(mainStatKeyBox.posX, mainStatKeyBox.posY,
             mainStatKeyBox.width, mainStatKeyBox.height);
@@ -266,6 +260,18 @@ namespace artifact {
         delete[] outText;
         if (res != "") return res;
         return "";
+    }
+
+    boolean lock(const void* pixelData, size_t width) {
+        //117, 138, 255
+        RGBQUAD targetColor{ 255, 255, 138, 117 };
+        RGBQUAD* rgbData = (RGBQUAD*)pixelData;
+        constexpr int xPos = 1457, yPos = 373;
+
+        if (rgbData[yPos * width + xPos] == targetColor)
+            return "true";
+        else
+            return "false";
     }
 
     unsigned short numOfSubstats(const void* pixelData, const size_t width) {
@@ -288,13 +294,13 @@ namespace artifact {
     }
 
     ISubstat* substats(tesseract::TessBaseAPI* api, size_t num) {
+        TextBox currentSubstatBox = artifact::substatBox;
         static ISubstat substatsBuffer[4];
 
         const size_t yOffset = 32;
-        TextBox substatBox{ 1133, 402, 303, 22 };
         
         for (size_t i = 0; i < num; i++) {
-            char* outText = ocrBox(api, substatBox);
+            char* outText = ocrBox(api, currentSubstatBox);
             std::string substatStr(outText);
 
             size_t plusIdx = 0;
@@ -311,7 +317,7 @@ namespace artifact {
             substatsBuffer[i].key = ocrtextToStatKey(substatStatkey, substatValue);
             substatsBuffer[i].value = substatStr.substr(plusIdx + 1, percentIdx - (plusIdx + 1));
 
-            substatBox.posY += yOffset;
+            currentSubstatBox.posY += yOffset;
             delete[] outText;
         }
 
