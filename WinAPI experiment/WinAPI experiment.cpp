@@ -56,41 +56,47 @@ std::ostream& operator<<(std::ostream& out, artifact::ISubstat substat) {
 
 int main()
 {
-    EnumWindows(bmp::enumWindowCallback, NULL);
-
-    if (!bmp::genshinWnd) {
-        std::cout << "Genshin not found" << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    if (!SetForegroundWindow(bmp::genshinWnd)) {
-        printErr(GetLastError(), "SetForegroundWindow");
-        return EXIT_FAILURE;
-    }
-
-    RECT rect;
-    if (!GetWindowRect(bmp::genshinWnd, &rect)) {
-        printErr(GetLastError(), "GetWindowRect");
-        return EXIT_FAILURE;
-    }
-#ifdef _DEBUG
-    std::cout << "Rect: \nx: " << rect.left << " y: " << rect.top << "\n";
-    std::cout << "x: " << rect.right << " y: " << rect.bottom << "\n";
-#endif
-    char* outText;
-
-    BITMAPINFOHEADER bmih;
-    LONG dwBmpSize;
-    void* data;
-
-    bmp::getBmpData(bmp::genshinWnd, bmih, data, dwBmpSize);
-    bmih.biHeight *= -1;
-    PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
-    //PIX* drivePix = pixRead("rect.bmp");
+//    EnumWindows(bmp::enumWindowCallback, NULL);
+//
+//    if (!bmp::genshinWnd) {
+//        std::cout << "Genshin not found" << std::endl;
+//        return EXIT_FAILURE;
+//    }
+//
+//    if (!SetForegroundWindow(bmp::genshinWnd)) {
+//        printErr(GetLastError(), "SetForegroundWindow");
+//        return EXIT_FAILURE;
+//    }
+//
+//    RECT rect;
+//    if (!GetWindowRect(bmp::genshinWnd, &rect)) {
+//        printErr(GetLastError(), "GetWindowRect");
+//        return EXIT_FAILURE;
+//    }
+//
+//    if (!IsWindowVisible(bmp::genshinWnd)) {
+//        std::cout << "Window not visible\n";
+//        return EXIT_FAILURE;
+//    }
+//#ifdef _DEBUG
+//    std::cout << "Rect: \nx: " << rect.left << " y: " << rect.top << "\n";
+//    std::cout << "x: " << rect.right << " y: " << rect.bottom << "\n";
+//#endif
+//    //char* outText;
+//
+//    BITMAPINFOHEADER bmih;
+//    LONG dwBmpSize;
+//
+//    bmp::getBmpData(bmp::genshinWnd, bmih, data, dwBmpSize);
+//    bmih.biHeight *= -1;
+    //PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
+    PIX* screenPix = pixRead("out.bmp");
+    void* data = pixGetData(screenPix);
+    l_int32 width = pixGetWidth(screenPix);
 
     using rects::TextBox;
     TextBox runtimeSetKeyBox = artifact::setKeyBox;
-    runtimeSetKeyBox.posY += artifact::numOfSubstats(data, bmih.biWidth) * 32;
+    runtimeSetKeyBox.posY += artifact::numOfSubstats(data, width) * 32;
 
     TextBox boxes[] = {
         artifact::mainStatKeyBox,
@@ -111,11 +117,11 @@ int main()
         "First substat"
     };
 
-    for (size_t i = 0; i < sizeof(stats) / sizeof(stats[0]); i++)
+    for (size_t i = 0; i < sizeof(boxes) / sizeof(TextBox); i++)
     {
         using namespace rects;
         RGBQUAD red{ 0, 0, 255, 0 };
-        bmp::drawRect(boxes[i], red, bmih.biWidth, (RGBQUAD*)data);
+        bmp::drawRect(boxes[i], red, width, (RGBQUAD*)data);
     }
     pixWrite("rect.bmp", screenPix, IFF_BMP);
     //PIX* drivePix = pixRead("rect.bmp");
@@ -127,12 +133,12 @@ int main()
     api->SetImage(screenPix);
     //void* data = pixGetData(drivePix);
 //#ifdef _DEBUG
-    unsigned short substatNum = artifact::numOfSubstats(data, bmih.biWidth);
-    std::cout << "substatCount: " << artifact::numOfSubstats(data, bmih.biWidth) << std::endl;
+    unsigned short substatNum = artifact::numOfSubstats(data, width);
+    std::cout << "substatCount: " << artifact::numOfSubstats(data, width) << std::endl;
     std::cout << "mainStatKey: " << artifact::mainStatKey(api) << std::endl;
-    std::cout << "rarity: " << artifact::rarity(data, bmih.biWidth) << std::endl;
+    std::cout << "rarity: " << artifact::rarity(data, width) << std::endl;
     std::cout << "set: " << artifact::setKey(api, substatNum) << std::endl;
-    std::cout << "lock: " << artifact::lock(data, bmih.biWidth) << std::endl;
+    std::cout << "lock: " << artifact::lock(data, width) << std::endl;
     artifact::ISubstat* test = artifact::substats(api, substatNum);
     for (size_t i = 0; i < substatNum; i++)
     {
