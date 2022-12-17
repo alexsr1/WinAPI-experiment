@@ -90,7 +90,8 @@ int main()
 
     using rects::TextBox;
     TextBox runtimeSetKeyBox = artifact::setKeyBox;
-    runtimeSetKeyBox.posY += artifact::numOfSubstats(data, bmih.biWidth) * 32;
+    unsigned int substatsNum = artifact::numOfSubstats(data, bmih.biWidth);
+    runtimeSetKeyBox.posY += substatsNum * 32;
 
     TextBox boxes[] = {
         artifact::mainStatKeyBox,
@@ -98,9 +99,8 @@ int main()
         artifact::slotKeyBox,
         artifact::levelBox,
         runtimeSetKeyBox,
-        artifact::substatBox
     };
-
+    TextBox substats[4];
     constexpr size_t numOfTextboxes = sizeof(boxes) / sizeof(TextBox);
     std::string stats[numOfTextboxes] = {
         "Main stat type",
@@ -108,7 +108,6 @@ int main()
         "Artifact type",
         "Level", 
         "Set",
-        "First substat"
     };
 
     for (size_t i = 0; i < sizeof(stats) / sizeof(stats[0]); i++)
