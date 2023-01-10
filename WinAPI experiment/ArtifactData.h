@@ -27,6 +27,7 @@ namespace artifact {
 	constexpr TextBox levelBox{ 1116, 359, 44, 20 };
 	constexpr TextBox substatBox{ 1133, 401, 303, 22 };
 	constexpr TextBox setKeyBox{ 1112, 402, 320, 23 };
+	constexpr int substatBoxYOffset = 32;
 
 
 	SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum);
@@ -36,5 +37,7 @@ namespace artifact {
 	StatKey mainStatKey(tesseract::TessBaseAPI* api);
 	boolean lock(const void* pixelData, size_t width);
 	unsigned short numOfSubstats(const void* pixelData, size_t width);
-	ISubstat* substats(tesseract::TessBaseAPI* api, size_t num);
+	std::vector<ISubstat> substats(tesseract::TessBaseAPI* api, size_t num);
+
+	void printArtifactData(tesseract::TessBaseAPI* api, const void* pixelData, size_t width);
 }

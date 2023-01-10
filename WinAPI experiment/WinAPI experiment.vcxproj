@@ -152,6 +152,8 @@
   <ItemGroup>
     <ClCompile Include="ArtifactData.cpp" />
     <ClCompile Include="bitmapcapture.cpp" />
+    <ClCompile Include="Debug.cpp" />
+    <ClCompile Include="Pix.cpp" />
     <ClCompile Include="TesseractFunctions.cpp" />
     <ClCompile Include="WinAPI experiment.cpp" />
     <ClCompile Include="WinapiMacros.cpp" />
@@ -160,6 +162,8 @@
     <ClInclude Include="ArtifactAttributeEnums.h" />
     <ClInclude Include="ArtifactData.h" />
     <ClInclude Include="bitmapcapture.h" />
+    <ClInclude Include="Debug.h" />
+    <ClInclude Include="Pix.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="TesseractFunctions.h" />
     <ClInclude Include="WinapiMacros.h" />

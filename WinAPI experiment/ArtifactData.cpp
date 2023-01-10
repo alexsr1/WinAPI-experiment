@@ -13,7 +13,7 @@ namespace artifact {
     using rects::TextBox;
 
     //https://frzyc.github.io/genshin-optimizer/#/doc/StatKey
-    std::unordered_map<std::string, const char*> StatKeyMap{
+    std::unordered_map<std::string, std::string> StatKeyMap{
         {"elemental", "eleMas"},
         {"energy", "enerRech_"},
         {"healing", "heal_"},
@@ -142,8 +142,13 @@ namespace artifact {
 
     SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum) {
         unsigned short yPos = 402 + substatNum * 32;
+        using rects::TextBox;
+        TextBox runtimeSetKeyBox = artifact::setKeyBox;
 
-        char* outText = ocrBox(api, slotKeyBox);
+        using artifact::substatBoxYOffset;
+        runtimeSetKeyBox.posY += substatNum * substatBoxYOffset;
+
+        char* outText = ocrBox(api, runtimeSetKeyBox);
         std::string slotKeyOcr(outText);
         strToLower(slotKeyOcr);
         std::string key = slotKeyOcr.substr(0, 4);
@@ -188,15 +193,12 @@ namespace artifact {
 
         char* outText = ocrBox(api, levelBox);
         std::string slotKeyOcr(outText);
-        size_t plusCharIdx = (size_t)-1;
-        for (size_t i = 0; i < slotKeyOcr.size(); i++)
-        {
-            if (slotKeyOcr[i] == '+')
-                plusCharIdx = i;
-        }
-
+        size_t plusCharIdx = 0;
+        for (; plusCharIdx < slotKeyOcr.size(); plusCharIdx++)
+            if (slotKeyOcr[plusCharIdx] == '+')
+                break;
         delete[] outText;
-        return slotKeyOcr.substr(0, plusCharIdx);
+        return slotKeyOcr.substr(plusCharIdx + 1, slotKeyOcr.size()-1 - plusCharIdx - 1);
     }
 
     number rarity(const void* pixelData, size_t width) {
@@ -293,9 +295,10 @@ namespace artifact {
         return substatCount;
     }
 
-    ISubstat* substats(tesseract::TessBaseAPI* api, size_t num) {
+    std::vector<ISubstat> substats(tesseract::TessBaseAPI* api, size_t num) {
+        //TO DO: CRIT RATE AND CRIT DMG FIX
         TextBox currentSubstatBox = artifact::substatBox;
-        static ISubstat substatsBuffer[4];
+        std::vector<ISubstat> substatsBuffer(4);
 
         const size_t yOffset = 32;
         
@@ -307,9 +310,10 @@ namespace artifact {
             for (; plusIdx < substatStr.size(); plusIdx++)
                 if (substatStr[plusIdx] == '+') break;
             
-            size_t percentIdx = substatStr.size() - 1;
-            for (; percentIdx < substatStr.size(); percentIdx--)
-                if (substatStr[percentIdx] == '%' || substatStr[percentIdx] == '/') break;
+            size_t percentIdx = 0;
+            for (; percentIdx < substatStr.size(); percentIdx++)
+                if (substatStr[percentIdx] == '%' || substatStr[percentIdx] == '/' || substatStr[percentIdx] == '\n')
+                    break;
 
             std::string substatStatkey = substatStr.substr(0, plusIdx);
             std::string substatValue = substatStr.substr(plusIdx + 1, percentIdx - plusIdx);
@@ -322,5 +326,27 @@ namespace artifact {
         }
 
         return substatsBuffer;
+    }
+
+    std::ostream& operator<<(std::ostream& out, ISubstat substat) {
+        return out << substat.key << ": " << substat.value;
+    }
+
+    void printArtifactData(tesseract::TessBaseAPI* api, const void* pixelData, size_t width) {
+        std::string keys[] = { "setKey", "slotKey", "level", "rarity", "mainStatKey", "location", "lock" };
+        unsigned short substatsNum = numOfSubstats(pixelData, width);
+        std::string values[]{ setKey(api, substatsNum), slotKey(api), level(api), rarity(pixelData, width), mainStatKey(api), "", lock(pixelData, width) };
+        std::vector<ISubstat> stats = substats(api, substatsNum);
+
+        for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
+        {
+            std::cout << keys[i] << ": " << values[i] << std::endl;
+        }
+        
+        std::cout << "substats: \n";
+        for (size_t i = 0; i < stats.size(); i++)
+        {
+            std::cout << stats[i] << std::endl;
+        }
     }
 }
