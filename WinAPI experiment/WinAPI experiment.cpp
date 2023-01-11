@@ -29,12 +29,43 @@ std::ostream& operator<<(std::ostream& out, artifact::ISubstat substat) {
 
 int main()
 {
-    EnumWindows(bmp::enumWindowCallback, NULL);
-
-    if (!bmp::genshinWnd) {
-        std::cout << "Genshin not found" << std::endl;
-        return EXIT_FAILURE;
-    }
+//    EnumWindows(bmp::enumWindowCallback, NULL);
+//
+//    if (!bmp::genshinWnd) {
+//        std::cout << "Genshin not found" << std::endl;
+//        return EXIT_FAILURE;
+//    }
+//
+//    if (!SetForegroundWindow(bmp::genshinWnd)) {
+//        printErr(GetLastError(), "SetForegroundWindow");
+//        return EXIT_FAILURE;
+//    }
+//
+//    RECT rect;
+//    if (!GetWindowRect(bmp::genshinWnd, &rect)) {
+//        printErr(GetLastError(), "GetWindowRect");
+//        return EXIT_FAILURE;
+//    }
+//
+//    if (!IsWindowVisible(bmp::genshinWnd)) {
+//        std::cout << "Window not visible\n";
+//        return EXIT_FAILURE;
+//    }
+//#ifdef _DEBUG
+//    std::cout << "Rect: \nx: " << rect.left << " y: " << rect.top << "\n";
+//    std::cout << "x: " << rect.right << " y: " << rect.bottom << "\n";
+//#endif
+//    //char* outText;
+//
+//    BITMAPINFOHEADER bmih;
+//    LONG dwBmpSize;
+//
+//    bmp::getBmpData(bmp::genshinWnd, bmih, data, dwBmpSize);
+//    bmih.biHeight *= -1;
+    //PIX* screenPix = bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
+    PIX* screenPix = pixRead("out.bmp");
+    void* data = pixGetData(screenPix);
+    l_int32 width = pixGetWidth(screenPix);
 
     if (!SetForegroundWindow(bmp::genshinWnd)) {
         printErr(GetLastError(), "SetForegroundWindow");
