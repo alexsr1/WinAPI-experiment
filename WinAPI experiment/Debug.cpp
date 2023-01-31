@@ -1,3 +1,5 @@
+#include <functional>
+
 #include <tesseract/baseapi.h>
 
 #include "Debug.h"
@@ -15,7 +17,7 @@ inline void printErr(DWORD err, const char errSrc[]) {
 }
 
 
-DWORD testScanner(HWND genshinWnd, tesseract::TessBaseAPI* api) {
+DWORD testScanner(HWND genshinWnd, tesseract::TessBaseAPI* api, std::function<void(artifact::IArtifact&)> proc) {
     RECT rect;
     if (!GetWindowRect(bmp::genshinWnd, &rect)) {
         printErr(GetLastError(), "GetWindowRect");
@@ -47,30 +49,30 @@ DWORD testScanner(HWND genshinWnd, tesseract::TessBaseAPI* api) {
                 return GetLastError();
             }
             cursorClick(tempX, tempY);
-            Sleep(100);
-            data = NULL;
-            bmp::getBmpData(bmp::genshinWnd, bmih, data, dwBmpSize);
-            bmih.biHeight *= -1;
-            Pix* screenPix = pix::bmpToPix(bmih, (l_uint32*)data, dwBmpSize);
+
+            Pix* screenPix;
+            pix::windowCapture(genshinWnd, screenPix);
             api->SetImage(screenPix);
-            artifact::printArtifactData(api, data, bmih.biWidth);
-            free(data);
-            std::cout << "\nIs this data correct? (y/n): ";
-            std::string temp;
-            std::cin >> temp;
-            if (temp != "y" && temp != "") return 0;
+
+            artifact::IArtifact artifactData = artifact::getArtifactData(api, screenPix);
+            proc(artifactData);
+
+            pixDestroy(&screenPix);
         }
-        mouseWheel(-5);
+        //mouseWheel(-5);
     }
 }
 
-void drawOcrBoxes(Pix* screenPix) {
+void drawOcrBoxes(Pix* screenPix, const char* path) {
     void* data = pixGetData(screenPix);
     long width = pixGetWidth(screenPix);
 
     using rects::TextBox;
+    using artifact::substatBoxYOffset;
+
     TextBox runtimeSetKeyBox = artifact::setKeyBox;
     unsigned int substatsNum = artifact::numOfSubstats(data, width);
+    runtimeSetKeyBox.posY += substatsNum * substatBoxYOffset;
 
     TextBox boxes[] = {
         artifact::mainStatKeyBox,
@@ -97,7 +99,15 @@ void drawOcrBoxes(Pix* screenPix) {
         RGBQUAD red{ 0, 0, 255, 0 };
         bmp::drawRect(boxes[i], red, width, (RGBQUAD*)data);
     }
-    pixWrite("rect.bmp", screenPix, IFF_BMP);
-    using artifact::substatBoxYOffset;
-    runtimeSetKeyBox.posY += substatsNum * substatBoxYOffset;
+
+    TextBox runtimeSubstatBox = artifact::substatBox;
+    for (size_t i = 0; i < substatsNum; i++)
+    {
+        using namespace rects;
+        RGBQUAD red{ 0, 0, 255, 0 };
+        bmp::drawRect(runtimeSubstatBox, red, width, (RGBQUAD*)data);
+
+        runtimeSubstatBox.posY += artifact::substatBoxYOffset;
+    }
+    pixWrite(path, screenPix, IFF_BMP);
 }

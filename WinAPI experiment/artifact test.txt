@@ -1,0 +1,1 @@
+{"setKey":"GladiatorsFinale","slotKey":"sands","level":"0","rarity":"4","mainStatKey":"def_","location":"","lock":"false","substats":[{"key":"enerRech_","value":4.7},{"key":"eleMas","value":13},{"key":"hp","value":215}]}

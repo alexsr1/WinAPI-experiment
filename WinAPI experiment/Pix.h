@@ -5,4 +5,5 @@
 
 namespace pix {
 	Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const LONG dataSize);
+	void windowCapture(HWND window, Pix*& screenPix);
 }

@@ -1,9 +1,10 @@
 #include <Windows.h>
-
 #include <iostream>
 #include <unordered_map>
 #include <memory>
 #include <algorithm>
+
+#include <leptonica/allheaders.h>
 
 #include "ArtifactData.h"
 #include "ArtifactAttributeEnums.h"
@@ -219,15 +220,15 @@ namespace artifact {
     }
 
     StatKey ocrtextToStatKey(std::string StatKeyStr, std::string mainStatValue) {
+        strToLower(StatKeyStr);
         std::string firstWord = getFirstWord(StatKeyStr);
-        strToLower(firstWord);
 
         auto it = StatKeyMap.find(firstWord);
         if (it != StatKeyMap.end()) return (StatKey)it->second;
 
         //Crit DMG or Crit Rate
         if (StatKeyStr.substr(0, 4) == "crit") {
-            switch (StatKeyStr[4]) {
+            switch (StatKeyStr[5]) {
             case 'r':
                 return (StatKey)"critRate_";
             case 'd':
@@ -298,7 +299,8 @@ namespace artifact {
     std::vector<ISubstat> substats(tesseract::TessBaseAPI* api, size_t num) {
         //TO DO: CRIT RATE AND CRIT DMG FIX
         TextBox currentSubstatBox = artifact::substatBox;
-        std::vector<ISubstat> substatsBuffer(4);
+        std::vector<ISubstat> substatsBuffer;
+        substatsBuffer.reserve(4);
 
         const size_t yOffset = 32;
         
@@ -318,6 +320,8 @@ namespace artifact {
             std::string substatStatkey = substatStr.substr(0, plusIdx);
             std::string substatValue = substatStr.substr(plusIdx + 1, percentIdx - plusIdx);
 
+            ISubstat temp;
+            substatsBuffer.push_back(temp);
             substatsBuffer[i].key = ocrtextToStatKey(substatStatkey, substatValue);
             substatsBuffer[i].value = substatStr.substr(plusIdx + 1, percentIdx - (plusIdx + 1));
 
@@ -332,7 +336,10 @@ namespace artifact {
         return out << substat.key << ": " << substat.value;
     }
 
-    void printArtifactData(tesseract::TessBaseAPI* api, const void* pixelData, size_t width) {
+    void printArtifactData(tesseract::TessBaseAPI* api, Pix* genshinPix) {
+        void* pixelData = (void*)pixGetData(genshinPix);
+        size_t width = pixGetWidth(genshinPix);
+
         std::string keys[] = { "setKey", "slotKey", "level", "rarity", "mainStatKey", "location", "lock" };
         unsigned short substatsNum = numOfSubstats(pixelData, width);
         std::string values[]{ setKey(api, substatsNum), slotKey(api), level(api), rarity(pixelData, width), mainStatKey(api), "", lock(pixelData, width) };
@@ -348,5 +355,51 @@ namespace artifact {
         {
             std::cout << stats[i] << std::endl;
         }
+    }
+
+    IArtifact getArtifactData(tesseract::TessBaseAPI* api, Pix* genshinPix) {
+        IArtifact artifactData;
+
+        void* pixelData = (void*)pixGetData(genshinPix);
+        size_t width = pixGetWidth(genshinPix);
+
+        unsigned short substatNum = numOfSubstats(pixelData, width);
+
+        artifactData.setkey = setKey(api, substatNum);
+        artifactData.slotkey = slotKey(api);
+        artifactData.level = level(api);
+        artifactData.rarity = rarity(pixelData, width);
+        artifactData.mainStatKey = mainStatKey(api);
+        artifactData.location = "";
+        artifactData.lock = lock(pixelData, width);
+        artifactData.substats = substats(api, substatNum);
+
+        return artifactData;
+    }
+
+    void initializeGood(std::ofstream& outputFile) {
+        outputFile << "{\"format\": \"GOOD\", \"version\": 2, \"source\": \"Genshin Scanner\", \"artifacts\": [";
+    }
+
+    void writeArtifact(std::ofstream& outputFile, IArtifact artifact) {
+        outputFile <<
+            R"({"setKey":")" << artifact.setkey << 
+            R"(","slotKey":")" << artifact.slotkey <<
+            R"(","level":")" << artifact.level << 
+            R"(","rarity":")" << artifact.rarity <<
+            R"(","mainStatKey":")" << artifact.mainStatKey << 
+            R"(","location":")" << artifact.location <<
+            R"(","lock":")" << artifact.lock << 
+            R"(","substats":[)";
+
+        for (size_t i = 0; i < artifact.substats.size(); i++)
+        {
+            outputFile << 
+                R"({"key":")" << artifact.substats[i].key <<
+                R"(","value":)" << artifact.substats[i].value << '}';
+            if (i != artifact.substats.size() - 1) outputFile << ',';
+        }
+
+        outputFile << "]}";
     }
 }

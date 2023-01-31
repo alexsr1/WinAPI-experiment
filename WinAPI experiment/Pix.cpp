@@ -1,4 +1,5 @@
 #include "Pix.h"
+#include "bitmapcapture.h"
 
 namespace pix {
     Pix* bmpToPix(const BITMAPINFOHEADER& info, l_uint32* pxlData, const LONG dataSize) {
@@ -26,5 +27,15 @@ namespace pix {
         pixEndianByteSwap(bmpPix);
 
         return bmpPix;
+    }
+
+    void windowCapture(HWND window, Pix*& screenPix) {
+        BITMAPINFOHEADER bmih;
+        void* data;
+        LONG bmpSize;
+
+        bmp::getBmpData(bmp::genshinWnd, bmih, data, bmpSize);
+        bmih.biHeight *= -1;
+        screenPix = pix::bmpToPix(bmih, (l_uint32*)data, bmpSize);
     }
 }

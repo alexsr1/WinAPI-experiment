@@ -3,6 +3,8 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include <fstream>
 
 #include <tesseract/baseapi.h>
 
@@ -16,8 +18,26 @@ namespace artifact {
 	using boolean = std::string;
 	struct ISubstat {
 		StatKey key;
-		std::string value;
+		number value;
 		ISubstat() : key(""), value("") {}
+	};
+
+	struct IArtifact {
+		SetKey setkey;
+		SlotKey slotkey;
+		number level;
+		number rarity;
+		StatKey mainStatKey;
+		std::string location = "";
+		boolean lock;
+		std::vector<ISubstat> substats;
+	};
+
+	struct GOOD {
+		std::string format = "GOOD";
+		number version = "2";
+		std::string source = "Genshin Scanner";
+		std::vector<IArtifact>& artifacts;
 	};
 
 	using rects::TextBox;
@@ -25,7 +45,7 @@ namespace artifact {
 	constexpr TextBox mainStatValueBox{ 1111, 252, 200, 33 };
 	constexpr TextBox slotKeyBox{ 1111, 159, 192, 18 };
 	constexpr TextBox levelBox{ 1116, 359, 44, 20 };
-	constexpr TextBox substatBox{ 1133, 401, 303, 22 };
+	constexpr TextBox substatBox{ 1131, 400, 303, 22 };
 	constexpr TextBox setKeyBox{ 1112, 402, 320, 23 };
 	constexpr int substatBoxYOffset = 32;
 
@@ -39,5 +59,10 @@ namespace artifact {
 	unsigned short numOfSubstats(const void* pixelData, size_t width);
 	std::vector<ISubstat> substats(tesseract::TessBaseAPI* api, size_t num);
 
-	void printArtifactData(tesseract::TessBaseAPI* api, const void* pixelData, size_t width);
+	void printArtifactData(tesseract::TessBaseAPI* api, Pix* genshinPix);
+	IArtifact getArtifactData(tesseract::TessBaseAPI* api, Pix* genshinPix);
+
+	void writeArtifact(std::ofstream& outputFile, IArtifact artifact);
+
+	void initializeGood(std::ofstream& outputFile);
 }
