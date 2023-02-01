@@ -60,6 +60,7 @@ namespace artifact {
 	std::vector<ISubstat> substats(tesseract::TessBaseAPI* api, size_t num);
 
 	void printArtifactData(tesseract::TessBaseAPI* api, Pix* genshinPix);
+	void printArtifact(const IArtifact& artifact);
 	IArtifact getArtifactData(tesseract::TessBaseAPI* api, Pix* genshinPix);
 
 	void writeArtifact(std::ofstream& outputFile, IArtifact artifact);

@@ -67,14 +67,20 @@ int main()
     }
     api->SetImage(screenPix);
 
+    using artifact::IArtifact;
+
     drawOcrBoxes(screenPix, "rect.bmp");
-    artifact::IArtifact test = artifact::getArtifactData(api, screenPix);
+    IArtifact test = artifact::getArtifactData(api, screenPix);
     std::ofstream out;
     out.open("artifact test.txt");
-    artifact::writeArtifact(out, test);
-    out.close();
-    testScanner(bmp::genshinWnd, api);
+    artifact::initializeGood(out);
 
+    testScanner(bmp::genshinWnd, api, [&out](IArtifact& fuck) {
+        artifact::writeArtifact(out, fuck);
+    out << ",";
+        });
+    out << "]}";
+    out.close();
     //Cleanup
     api->End();
     delete api;

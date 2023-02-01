@@ -336,24 +336,23 @@ namespace artifact {
         return out << substat.key << ": " << substat.value;
     }
 
-    void printArtifactData(tesseract::TessBaseAPI* api, Pix* genshinPix) {
-        void* pixelData = (void*)pixGetData(genshinPix);
-        size_t width = pixGetWidth(genshinPix);
+    inline void printArtifactData(tesseract::TessBaseAPI* api, Pix* genshinPix) {
+        IArtifact artifactOnScreen = getArtifactData(api, genshinPix);
+        printArtifact(artifactOnScreen);
+    }
 
-        std::string keys[] = { "setKey", "slotKey", "level", "rarity", "mainStatKey", "location", "lock" };
-        unsigned short substatsNum = numOfSubstats(pixelData, width);
-        std::string values[]{ setKey(api, substatsNum), slotKey(api), level(api), rarity(pixelData, width), mainStatKey(api), "", lock(pixelData, width) };
-        std::vector<ISubstat> stats = substats(api, substatsNum);
 
-        for (size_t i = 0; i < sizeof(keys) / sizeof(keys[0]); i++)
-        {
-            std::cout << keys[i] << ": " << values[i] << std::endl;
-        }
-        
-        std::cout << "substats: \n";
-        for (size_t i = 0; i < stats.size(); i++)
-        {
-            std::cout << stats[i] << std::endl;
+    void printArtifact(const IArtifact& artifact) {
+        std::cout << "setkey: " << artifact.setkey << std::endl;
+        std::cout << "slotkey: " << artifact.slotkey << std::endl;
+        std::cout << "level: " << artifact.level << std::endl;
+        std::cout << "rarity: " << artifact.rarity << std::endl;
+        std::cout << "mainStatKey: " << artifact.mainStatKey << std::endl;
+        std::cout << "location: " << artifact.location << std::endl;
+        std::cout << "lock: " << artifact.lock << std::endl;
+        std::cout << "substats: " << std::endl;
+        for (const ISubstat& stat : artifact.substats) {
+            std::cout << stat << std::endl;
         }
     }
 
@@ -378,7 +377,7 @@ namespace artifact {
     }
 
     void initializeGood(std::ofstream& outputFile) {
-        outputFile << "{\"format\": \"GOOD\", \"version\": 2, \"source\": \"Genshin Scanner\", \"artifacts\": [";
+        outputFile << "{\"format\":\"GOOD\",\"version\": 2,\"source\":\"Genshin Scanner\",\"artifacts\":[";
     }
 
     void writeArtifact(std::ofstream& outputFile, IArtifact artifact) {

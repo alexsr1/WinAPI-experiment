@@ -1,5 +1,3 @@
-#include <functional>
-
 #include <tesseract/baseapi.h>
 
 #include "Debug.h"
@@ -48,7 +46,7 @@ DWORD testScanner(HWND genshinWnd, tesseract::TessBaseAPI* api, std::function<vo
                 printErr(GetLastError(), "SetCursorPos");
                 return GetLastError();
             }
-            cursorClick(tempX, tempY);
+            //cursorClick(tempX, tempY);
 
             Pix* screenPix;
             pix::windowCapture(genshinWnd, screenPix);
@@ -58,9 +56,11 @@ DWORD testScanner(HWND genshinWnd, tesseract::TessBaseAPI* api, std::function<vo
             proc(artifactData);
 
             pixDestroy(&screenPix);
+            goto END;
         }
         //mouseWheel(-5);
     }
+END:;
 }
 
 void drawOcrBoxes(Pix* screenPix, const char* path) {
