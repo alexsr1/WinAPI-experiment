@@ -142,6 +142,10 @@ namespace artifact {
     }
 
     SetKey setKey(tesseract::TessBaseAPI* api, unsigned short substatNum) {
+        if (!api->SetVariable("tessedit_char_whitelist", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'")) {
+            std::cout << "Dict failed\n";
+            return "";
+        }
         unsigned short yPos = 402 + substatNum * 32;
         using rects::TextBox;
         TextBox runtimeSetKeyBox = artifact::setKeyBox;
@@ -150,6 +154,10 @@ namespace artifact {
         runtimeSetKeyBox.posY += substatNum * substatBoxYOffset;
 
         char* outText = ocrBox(api, runtimeSetKeyBox);
+        if (!api->SetVariable("tessedit_char_whitelist", "")) {
+            std::cout << "Dict failed\n";
+            return "";
+        }
         std::string slotKeyOcr(outText);
         strToLower(slotKeyOcr);
         std::string key = slotKeyOcr.substr(0, 4);
@@ -305,7 +313,9 @@ namespace artifact {
         const size_t yOffset = 32;
         
         for (size_t i = 0; i < num; i++) {
+            api->SetVariable("tessedit_char_whitelist", "abcdefghijklmnopqrstuvwxyzEHPAGEHPCD+.%0123456789");
             char* outText = ocrBox(api, currentSubstatBox);
+            api->SetVariable("tessedit_char_whitelist", "");
             std::string substatStr(outText);
 
             size_t plusIdx = 0;

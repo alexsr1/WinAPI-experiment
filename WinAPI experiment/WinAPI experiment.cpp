@@ -65,6 +65,8 @@ int main()
         std::cerr << "Could not initialize tesseract.\n";
         return EXIT_FAILURE;
     }
+    api->SetVariable("tessedit_char_whitelist", "0123456789+%DMG");
+
     api->SetImage(screenPix);
 
     using artifact::IArtifact;
