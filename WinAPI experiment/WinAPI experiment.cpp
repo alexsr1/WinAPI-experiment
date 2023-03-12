@@ -29,43 +29,50 @@ std::ostream& operator<<(std::ostream& out, artifact::ISubstat substat) {
     return out << substat.key << ": " << substat.value;
 }
 
-int main()
-{
-    EnumWindows(bmp::enumWindowCallback, NULL);
+int checkGenshinWnd(HWND& genshinWnd) {
+    EnumWindows(bmp::enumWindowCallback, reinterpret_cast<LPARAM>(&genshinWnd));
 
-    if (!bmp::genshinWnd) {
+    if (!genshinWnd) {
         std::cout << "Genshin not found" << std::endl;
         return EXIT_FAILURE;
     }
 
-    if (!SetForegroundWindow(bmp::genshinWnd)) {
+    if (!SetForegroundWindow(genshinWnd)) {
         printErr(GetLastError(), "SetForegroundWindow");
         return EXIT_FAILURE;
     }
 
     RECT rect;
-    if (!GetWindowRect(bmp::genshinWnd, &rect)) {
+    if (!GetWindowRect(genshinWnd, &rect)) {
         printErr(GetLastError(), "GetWindowRect");
         return EXIT_FAILURE;
     }
 
-    if (!IsWindowVisible(bmp::genshinWnd)) {
+    if (!IsWindowVisible(genshinWnd)) {
         std::cout << "Window not visible\n";
         return EXIT_FAILURE;
     }
-#ifdef _DEBUG
-    std::cout << "Rect: \nx: " << rect.left << " y: " << rect.top << "\n";
-    std::cout << "x: " << rect.right << " y: " << rect.bottom << "\n";
-#endif
+
+    return EXIT_SUCCESS;
+}
+
+int main()
+{
+    HWND genshinWnd;
+
+    if (checkGenshinWnd(genshinWnd) == EXIT_FAILURE)
+        return EXIT_FAILURE;
+
     Pix* screenPix;
-    pix::windowCapture(bmp::genshinWnd, screenPix);
+    pix::windowCapture(genshinWnd, screenPix);
 
     tesseract::TessBaseAPI* api = new tesseract::TessBaseAPI();
-    if (api->Init("tessdata", "eng")) {
+    if (api->Init("tessdata", "eng_HYWenHei", tesseract::OcrEngineMode::OEM_LSTM_ONLY)) {
         std::cerr << "Could not initialize tesseract.\n";
         return EXIT_FAILURE;
     }
-    api->SetVariable("tessedit_char_whitelist", "0123456789+%DMG");
+
+    api->SetPageSegMode(tesseract::PSM_SINGLE_LINE);
 
     api->SetImage(screenPix);
 
@@ -77,17 +84,19 @@ int main()
     out.open("artifact test.txt");
     artifact::initializeGood(out);
 
-    testScanner(bmp::genshinWnd, api, [&out](IArtifact& fuck) {
-        artifact::writeArtifact(out, fuck);
-    out << ",";
-        });
+    //artifact::generateTrainingImages(api, screenPix);
+
+    testScanner(genshinWnd, api, [&out](IArtifact& arti) {
+        artifact::writeArtifact(out,arti);
+        out << ",";
+        }, true);
     out << "]}";
     out.close();
     //Cleanup
     api->End();
     delete api;
     //delete[] outText;
-    
     pixDestroy(&screenPix);
+
     return 0;
 }

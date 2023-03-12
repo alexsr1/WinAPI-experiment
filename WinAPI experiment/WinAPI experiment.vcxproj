@@ -76,12 +76,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -112,11 +108,10 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\h;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -126,17 +121,17 @@
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
+    <ResourceCompile />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\h;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -148,25 +143,26 @@
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
+    <ResourceCompile />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ArtifactData.cpp" />
-    <ClCompile Include="bitmapcapture.cpp" />
-    <ClCompile Include="Debug.cpp" />
-    <ClCompile Include="Pix.cpp" />
-    <ClCompile Include="TesseractFunctions.cpp" />
+    <ClCompile Include="src\cpp\ArtifactData.cpp" />
+    <ClCompile Include="src\cpp\bitmapcapture.cpp" />
+    <ClCompile Include="src\cpp\Debug.cpp" />
+    <ClCompile Include="src\cpp\Pix.cpp" />
+    <ClCompile Include="src\cpp\TesseractFunctions.cpp" />
     <ClCompile Include="WinAPI experiment.cpp" />
-    <ClCompile Include="WinapiMacros.cpp" />
+    <ClCompile Include="src\cpp\WinapiMacros.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ArtifactAttributeEnums.h" />
-    <ClInclude Include="ArtifactData.h" />
-    <ClInclude Include="bitmapcapture.h" />
-    <ClInclude Include="Debug.h" />
-    <ClInclude Include="Pix.h" />
-    <ClInclude Include="resource.h" />
-    <ClInclude Include="TesseractFunctions.h" />
-    <ClInclude Include="WinapiMacros.h" />
+    <ClInclude Include="src\h\ArtifactAttributeEnums.h" />
+    <ClInclude Include="src\h\ArtifactData.h" />
+    <ClInclude Include="src\h\bitmapcapture.h" />
+    <ClInclude Include="src\h\Debug.h" />
+    <ClInclude Include="src\h\Pix.h" />
+    <ClInclude Include="src\h\resource.h" />
+    <ClInclude Include="src\h\TesseractFunctions.h" />
+    <ClInclude Include="src\h\WinapiMacros.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="WinAPI experiment.rc" />
